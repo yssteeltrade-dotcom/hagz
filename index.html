@@ -592,11 +592,10 @@ async function rejectReq(id){
 
 /* ---------- revenue, expenses & staff custody ---------- */
 const EXP_CATS=['كهرباء','مياه','عمالة','صيانة','نظافة','أخرى'];
-function csel(p,sel){const e=$(sel,p);const v=e?e.value:'';S.lastStaff=v||null;return v||null;}
+function csel(){return S.role==='staff'?(S.staffId||null):null;}
 function staffField(id){
-  if(S.role==='staff')return '<input type="hidden" id="'+id+'" value="'+esc(S.staffId||'')+'">';
-  if(!S.staff.length)return '';
-  return '<div class="field"><label for="'+id+'">استلم المبلغ</label><select id="'+id+'"><option value="">المدير مباشرة</option>'+S.staff.map(s=>'<option value="'+esc(s.id)+'"'+(S.lastStaff===s.id?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select></div>';
+  if(id!=='cp-staff')return '';
+  return '<p class="muted sm" style="margin:0">'+(S.role==='staff'?'المبلغ المدفوع هيتسجل في عهدتك لحد ما تورّده.':'المبلغ المدفوع هيتحسب في إيراد اليوم.')+'</p>';
 }
 function staffName(id){const s=S.staff.find(x=>x.id===id);return s?s.name:'';}
 function revDay(k){
