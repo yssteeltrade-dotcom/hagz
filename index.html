@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>حجز الملعب</title>
 <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#1c6a41">
+<meta name="theme-color" content="#1c6a41">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 :root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
-html,body{margin:0}body{font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}
+html,body{margin:0}body{font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}body.staff .adm{display:none!important}
 </style>
 <style>
 /* Layout: one narrow match-sheet column. The day is a pitch-line timeline: solid turf blocks for booked hours, dashed pitch-marking boxes for free gaps. */
@@ -160,6 +160,7 @@ input[type="number"],input[type="tel"],input[type="date"]{direction:ltr;text-ali
 <div id="app" class="wrap" dir="rtl" lang="ar"><div id="main"></div></div>
 <div id="sheet" dir="rtl" lang="ar"></div>
 <div id="toast" role="status" dir="rtl"><span id="toast-t"></span></div>
+<script src="firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -167,14 +168,7 @@ input[type="number"],input[type="tel"],input[type="date"]{direction:ltr;text-ali
 
 (function(){
 'use strict';
-/* ====== إعداد Firebase: الصق هنا بيانات مشروعك (من Project settings > Your apps) ====== */
-const FIREBASE_CONFIG={
-  apiKey:"AIzaSyCXt4ixy8oX9DYIgPFKKGRQayPGK5y-vN8",
-  authDomain:"hagz-b51c0.firebaseapp.com",
-  projectId:"hagz-b51c0",
-  appId:"1:31618240541:web:f88742a65920807f1bf6f4"
-};
-/* ================================================================================== */
+const FIREBASE_CONFIG=window.FIREBASE_CONFIG||{};
 document.documentElement.dir='rtl';document.documentElement.lang='ar';
 
 /* ---------- helpers ---------- */
@@ -296,13 +290,14 @@ function render(force){
   else if(S.mode==='public')html=publicView();
   else if(S.mode==='customer')html=customerView();
   else html=ownerView();
-  main.innerHTML=html;if(S.mode==='public')refreshSend();
+  main.innerHTML=html;document.body.classList.toggle('staff',S.role==='staff');if(S.mode==='public')refreshSend();
 }
 
 function ownerView(){
   S.date=S.date||bizToday();
+  if(S.role==='staff'&&S.tab!=='day'&&S.tab!=='customers')S.tab='day';
   const nw=S.requests.filter(r=>r.status==='awaiting').length;
-  const tabs=[['day','الحجوزات'],['req','الطلبات'+(nw?' ('+nw+')':'')],['rev','الإيرادات'],['customers','العملاء'],['settings','الإعدادات']];
+  const tabs0=[['day','الحجوزات'],['req','الطلبات'+(nw?' ('+nw+')':'')],['rev','الإيرادات'],['customers','العملاء'],['settings','الإعدادات']];const tabs=S.role==='staff'?tabs0.filter(t=>t[0]==='day'||t[0]==='customers'):tabs0;
   return '<header class="head"><h1>'+esc(S.cfg.name)+'</h1><span class="muted sm">جدول الحجز وحسابات العملاء</span></header>'
     +'<div class="tabs" role="tablist">'+tabs.map(t=>'<button role="tab" aria-selected="'+(S.tab===t[0])+'" data-act="tab" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>'
     +(S.tab==='day'?(S.dayOpen?dayView():calView()):S.tab==='req'?reqView():S.tab==='rev'?revView():S.tab==='customers'?(S.cid?custDetail():custList()):settingsView());
@@ -387,7 +382,7 @@ function custDetail(){
   const cls=b.net<0?'owe':b.net>0?'credit':'';
   const msg='أهلاً '+c.name+'، ده رابط حسابك في '+S.cfg.name+': '+link;
   const wa='https://wa.me/'+waNum(c.phone)+'?text='+encodeURIComponent(msg);
-  return '<div class="dayline"><button class="btn ghost small" data-act="back">كل العملاء</button><button class="btn ghost small" data-act="editCustomer" data-id="'+esc(c.id)+'">تعديل البيانات</button></div>'
+  return '<div class="dayline"><button class="btn ghost small" data-act="back">كل العملاء</button><button class="btn ghost small adm" data-act="editCustomer" data-id="'+esc(c.id)+'">تعديل البيانات</button></div>'
     +'<section class="card"><h2>'+esc(c.name)+'</h2>'+(c.phone?'<small>'+esc(c.phone)+'</small>':'')
     +'<div class="bal '+cls+'" style="margin-top:8px">'+(b.net<0?'عليه '+money(-b.net):b.net>0?'له '+money(b.net):'حسابه مظبوط')+'</div>'
     +'<small>إجمالي الحجوزات '+money(b.due)+' · إجمالي المدفوع '+money(b.paid)+(b.open?' · رصيد سابق '+(b.open>0?'له ':'عليه ')+money(Math.abs(b.open)):'')+'</small>'
@@ -399,7 +394,7 @@ function custDetail(){
       const key='d-'+r.kind+'-'+r.id,armed=S.armed===key;
       return '<div class="led"><div><strong>'+esc(r.label)+'</strong><small>'+ledSub(r)+'</small></div>'
         +'<div class="amt '+ledAmt(r)[0]+'">'+ledAmt(r)[1]+'</div>'
-        +'<div class="foot"><span class="muted sm">الرصيد بعدها: '+runText(r.run)+'</span>'+(r.kind==='o'?'':'<button class="btn small '+(armed?'danger':'ghost')+'" data-act="del" data-key="'+key+'" data-kind="'+r.kind+'" data-id="'+esc(r.id)+'">'+(armed?'اضغط للتأكيد':'حذف')+'</button>')+'</div></div>';
+        +'<div class="foot"><span class="muted sm">الرصيد بعدها: '+runText(r.run)+'</span>'+(r.kind==='o'?'':'<button class="btn small adm '+(armed?'danger':'ghost')+'" data-act="del" data-key="'+key+'" data-kind="'+r.kind+'" data-id="'+esc(r.id)+'">'+(armed?'اضغط للتأكيد':'حذف')+'</button>')+'</div></div>';
     }).join(''):'<p class="muted sm" style="margin-top:6px">لسه مفيش حركات على الحساب ده.</p>')+'</section>';
 }
 
@@ -599,6 +594,7 @@ async function rejectReq(id){
 const EXP_CATS=['كهرباء','مياه','عمالة','صيانة','نظافة','أخرى'];
 function csel(p,sel){const e=$(sel,p);const v=e?e.value:'';S.lastStaff=v||null;return v||null;}
 function staffField(id){
+  if(S.role==='staff')return '<input type="hidden" id="'+id+'" value="'+esc(S.staffId||'')+'">';
   if(!S.staff.length)return '';
   return '<div class="field"><label for="'+id+'">استلم المبلغ</label><select id="'+id+'"><option value="">المدير مباشرة</option>'+S.staff.map(s=>'<option value="'+esc(s.id)+'"'+(S.lastStaff===s.id?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select></div>';
 }
@@ -682,10 +678,27 @@ function expenseSheet(date){
 }
 function staffNewSheet(){
   const p=openSheet('موظف جديد',
-    '<div class="form"><div class="field"><label for="sf-name">اسم الموظف</label><input id="sf-name" autocomplete="off"></div><button class="btn primary" id="sf-save">حفظ</button></div>');
+    '<div class="form"><div class="field"><label for="sf-name">اسم الموظف</label><input id="sf-name" autocomplete="off"></div>'
+    +'<div class="field"><label for="sf-phone">رقم موبايله (هيدخل بيه)</label><input id="sf-phone" type="tel" inputmode="tel" dir="ltr"></div>'
+    +'<div class="field"><label for="sf-pass">كلمة سر للدخول (6 على الأقل)</label><input id="sf-pass" type="text" dir="ltr" autocomplete="off"></div>'
+    +'<small>لو سبت الموبايل وكلمة السر فاضيين بيتسجل اسم بس لتتبع العهدة، من غير دخول. الموظف اللي بيدخل يقدر يضيف حجوزات ودفعات، ومبيشوفش الإيرادات والإعدادات ومبيمسحش حاجة.</small>'
+    +'<p id="sf-err" class="amt owe sm"></p><button class="btn primary" id="sf-save">حفظ</button></div>');
   $('#sf-save',p).addEventListener('click',async()=>{
-    const nm=$('#sf-name',p).value.trim();if(!nm){toast('اكتب الاسم');return;}
-    try{await db.collection('staff').doc().set({name:nm,createdAt:Date.now()});closeSheet();toast('تمت إضافة الموظف');}catch(e){toast('تعذر الحفظ');}
+    const nm=$('#sf-name',p).value.trim(),ph=$('#sf-phone',p).value.trim(),pw=$('#sf-pass',p).value;
+    const err=$('#sf-err',p);err.textContent='';
+    if(!nm){toast('اكتب الاسم');return;}
+    const wantLogin=!!(ph||pw);
+    if(wantLogin&&(ph.replace(/\D/g,'').length<10||pw.length<6)){err.textContent='اكتب رقم موبايل صحيح وكلمة سر 6 على الأقل';return;}
+    const btn=$('#sf-save',p);btn.disabled=true;
+    try{
+      const ref=db.collection('staff').doc();
+      await ref.set({name:nm,createdAt:Date.now()});
+      if(wantLogin){
+        try{await createStaffLogin(ph,pw,nm,ref.id);}
+        catch(e){await ref.delete();err.textContent=loginErr(e);btn.disabled=false;return;}
+      }
+      closeSheet();toast(wantLogin?'تمت إضافة الموظف وحساب الدخول':'تمت إضافة الموظف');
+    }catch(e){btn.disabled=false;toast('تعذر الحفظ');}
   });
 }
 function staffSheet(id){
@@ -702,8 +715,22 @@ function staffSheet(id){
     +'<small>التوريد بيفضل "بانتظار الاستلام" ومش بيتخصم من حساب الموظف غير لما تأكد إنك استلمت المبلغ.</small>'
     +'<button class="btn primary" id="rm-add">تسجيل التوريد</button></div>'
     +(rem.length?'<div><h3>التوريدات</h3>'+rem.map(r=>'<div class="led"><div><strong>'+money(r.amount)+'</strong><small>'+shortDate(r.date)+(r.note?' · '+esc(r.note):'')+'</small></div><div class="amt '+(r.status==='received'?'credit':'owe')+'">'+(r.status==='received'?'اتستلم':'بانتظار الاستلام')+'</div>'+(r.status==='pending'?'<div class="foot"><button class="btn small primary rm-ok" data-id="'+esc(r.id)+'">تم استلام المبلغ</button><button class="btn small ghost rm-no" data-id="'+esc(r.id)+'">إلغاء التوريد</button></div>':'')+'</div>').join('')+'</div>':'')
+    +(s.login?'<div class="card form"><h3>الدخول بالموبايل</h3><div class="kv"><span class="muted">رقم الدخول</span><strong dir="ltr">'+esc(s.phone||'')+'</strong></div><small>إيقاف الدخول بيمنعه من فتح البرنامج. العهدة والسجل بيفضلوا زي ما هم.</small><button class="btn danger" id="sf-stop">إيقاف الدخول</button></div>'
+      :'<div class="card form"><h3>إنشاء حساب دخول</h3><div class="field"><label for="sf-phone">رقم الموبايل</label><input id="sf-phone" type="tel" inputmode="tel" dir="ltr"></div><div class="field"><label for="sf-pass">كلمة سر (6 على الأقل)</label><input id="sf-pass" type="text" dir="ltr" autocomplete="off"></div><p id="sf-err" class="amt owe sm"></p><button class="btn" id="sf-mk">إنشاء حساب الدخول</button></div>')
     +'</div>');
   const reopen=()=>{closeSheet();setTimeout(()=>staffSheet(id),350);};
+  const mk=$('#sf-mk',p);
+  if(mk)mk.addEventListener('click',async()=>{
+    const ph=$('#sf-phone',p).value.trim(),pw=$('#sf-pass',p).value,err=$('#sf-err',p);err.textContent='';
+    if(ph.replace(/\D/g,'').length<10||pw.length<6){err.textContent='اكتب رقم موبايل صحيح وكلمة سر 6 على الأقل';return;}
+    mk.disabled=true;
+    try{await createStaffLogin(ph,pw,s.name,id);toast('تم إنشاء حساب الدخول');reopen();}catch(e){err.textContent=loginErr(e);mk.disabled=false;}
+  });
+  const stop=$('#sf-stop',p);
+  if(stop){let a=false;stop.addEventListener('click',async()=>{
+    if(!a){a=true;stop.textContent='اضغط تاني للتأكيد';return;}
+    try{await db.doc('team/'+(s.loginEmail||phoneEmail(s.phone))).delete();await db.doc('staff/'+id).update({login:false});toast('اتوقف الدخول');reopen();}catch(e){toast('تعذر الإيقاف');}
+  });}
   $('#rm-add',p).addEventListener('click',async()=>{
     const amt=parseFloat($('#rm-amt',p).value);
     if(!(amt>0)){toast('اكتب المبلغ');return;}
@@ -819,11 +846,11 @@ function bookingDetail(id){
     +'<div class="kv"><span class="muted">اليوم</span><strong>'+dayLabel(b.date)+'</strong></div>'
     +'<div class="kv"><span class="muted">الوقت</span><strong>'+fmtTime(b.start)+' إلى '+fmtTime(b.start+b.duration)+' ('+durLabel(b.duration)+')</strong></div>'
     +'<div class="kv"><span class="muted">حساب العميل</span>'+pill(bal.net,false)+'</div>'+(+b.discount>0?'<div class="kv"><span class="muted">الخصم</span><strong>'+money(b.discount)+'</strong></div>':'')
-    +'<div class="two"><div class="field"><label for="bd-price">المبلغ المحسوب (ج)</label><input id="bd-price" type="number" inputmode="decimal" min="0" step="any" value="'+esc(b.price)+'"></div>'
+    +'<div class="two adm"><div class="field"><label for="bd-price">المبلغ المحسوب (ج)</label><input id="bd-price" type="number" inputmode="decimal" min="0" step="any" value="'+esc(b.price)+'"></div>'
     +'<div class="field"><label for="bd-note">ملاحظة</label><input id="bd-note" value="'+esc(b.note||'')+'"></div></div>'
-    +'<button class="btn primary" id="bd-save">حفظ التعديل</button>'
+    +'<button class="btn primary adm" id="bd-save">حفظ التعديل</button>'
     +'<div class="two"><button class="btn" id="bd-pay">تسجيل دفعة</button><button class="btn" id="bd-cust">حساب العميل</button></div>'
-    +'<button class="btn" id="bd-undo">رجوع لمحجوز (تصحيح خطأ)</button><button class="btn danger" id="bd-del">حذف الحجز</button></div>');
+    +'<button class="btn adm" id="bd-undo">رجوع لمحجوز (تصحيح خطأ)</button><button class="btn danger adm" id="bd-del">حذف الحجز</button></div>');
   $('#bd-save',p).addEventListener('click',async()=>{
     const price=parseFloat($('#bd-price',p).value);if(!(price>=0)){toast('اكتب السعر');return;}
     try{await db.doc('bookings/'+id).update({price:price,discount:Math.max(0,r2((+b.listPrice||price)-price)),note:$('#bd-note',p).value.trim()});closeSheet();toast('تم الحفظ');}catch(e){toast('تعذر الحفظ');}
@@ -852,8 +879,8 @@ function pendingSheet(b){
     +'<button class="btn" id="bp-cancel">إلغاء الحجز</button>'
     +'<div class="field"><label for="bp-note">ملاحظة</label><input id="bp-note" value="'+esc(b.note||'')+'"></div>'
     +'<div class="two"><button class="btn ghost" id="bp-save">حفظ الملاحظة</button><button class="btn ghost" id="bp-cust">حساب العميل</button></div>'
-    +(b.seriesId?'<button class="btn" id="bp-series">حذف باقي الحجوزات الثابتة من هذا اليوم</button>':'')
-    +'<button class="btn danger" id="bp-del">حذف الحجز</button></div>');
+    +(b.seriesId?'<button class="btn adm" id="bp-series">حذف باقي الحجوزات الثابتة من هذا اليوم</button>':'')
+    +'<button class="btn danger adm" id="bp-del">حذف الحجز</button></div>');
   $('#bp-done',p).addEventListener('click',()=>{closeSheet();completeSheet(id);});
   $('#bp-cancel',p).addEventListener('click',()=>{closeSheet();cancelSheet(id);});
   $('#bp-save',p).addEventListener('click',async()=>{try{await db.doc('bookings/'+id).update({note:$('#bp-note',p).value.trim()});closeSheet();toast('تم الحفظ');}catch(e){toast('تعذر الحفظ');}});
@@ -940,9 +967,9 @@ function cancelledSheet(b){
     +'<div class="kv"><span class="muted">الوقت</span><strong>'+fmtTime(b.start)+' إلى '+fmtTime(b.start+b.duration)+' ('+durLabel(b.duration)+')</strong></div>'
     +'<div class="kv"><span class="muted">سبب الإلغاء</span><strong>'+esc(b.cancelReason||'—')+'</strong></div>'
     +'<div class="kv"><span class="muted">الحساب</span>'+(b.charged?'<span class="pill owe">اتحسب '+money(b.price)+' على العميل</span>':'<span class="pill even">بدون حساب</span>')+'</div>'
-    +'<button class="btn" id="bc-edit">تعديل الإلغاء</button>'
-    +'<div class="two"><button class="btn ghost" id="bc-undo">رجوع لمحجوز</button><button class="btn ghost" id="bc-cust">حساب العميل</button></div>'
-    +'<button class="btn danger" id="bc-del">حذف الحجز</button></div>');
+    +'<button class="btn adm" id="bc-edit">تعديل الإلغاء</button>'
+    +'<div class="two"><button class="btn ghost adm" id="bc-undo">رجوع لمحجوز</button><button class="btn ghost" id="bc-cust">حساب العميل</button></div>'
+    +'<button class="btn danger adm" id="bc-del">حذف الحجز</button></div>');
   $('#bc-edit',p).addEventListener('click',()=>{closeSheet();cancelSheet(id);});
   $('#bc-cust',p).addEventListener('click',()=>{closeSheet();S.tab='customers';S.cid=b.customerId;render(true);});
   $('#bc-undo',p).addEventListener('click',async()=>{
@@ -986,7 +1013,7 @@ function customerSheet(id){
   const p=openSheet(c?'تعديل بيانات العميل':'عميل جديد',
     '<div class="form"><div class="field"><label for="cu-name">الاسم</label><input id="cu-name" autocomplete="off" value="'+esc(c?c.name:'')+'"></div>'
     +'<div class="field"><label for="cu-phone">الموبايل (اختياري)</label><input id="cu-phone" type="tel" inputmode="tel" value="'+esc(c?c.phone||'':'')+'"></div>'
-    +'<div class="two"><div class="field"><label for="cu-open">رصيد سابق (قبل بدء البرنامج)</label><input id="cu-open" type="number" inputmode="decimal" min="0" step="any" value="'+(ob0?Math.abs(ob0):'')+'"></div>'
+    +'<div class="two adm"><div class="field"><label for="cu-open">رصيد سابق (قبل بدء البرنامج)</label><input id="cu-open" type="number" inputmode="decimal" min="0" step="any" value="'+(ob0?Math.abs(ob0):'')+'"></div>'
     +'<div class="field"><label for="cu-dir">نوع الرصيد</label><select id="cu-dir"><option value="owe"'+(ob0<=0?' selected':'')+'>عليه (مديون)</option><option value="credit"'+(ob0>0?' selected':'')+'>له (دفع مقدم)</option></select></div></div>'
     +'<button class="btn primary" id="cu-save">حفظ</button></div>');
   $('#cu-save',p).addEventListener('click',async()=>{
@@ -1095,6 +1122,24 @@ if(typeof firebase!=='undefined'&&!cfgMissing){
   });
 }
 
+function phoneEmail(p){let d=String(p||'').replace(/\D/g,'');if(d.startsWith('20')&&d.length===12)d='0'+d.slice(2);return d+'@phone.local';}
+function loginId(v){v=String(v||'').trim();return v.indexOf('@')>=0?v:phoneEmail(v);}
+async function createStaffLogin(phone,pw,name,staffId){
+  const em=phoneEmail(phone);
+  const app2=(firebase.apps||[]).find(a=>a.name==='sec')||firebase.initializeApp(FIREBASE_CONFIG,'sec');
+  const a2=app2.auth();
+  await a2.createUserWithEmailAndPassword(em,pw);
+  try{await a2.signOut();}catch(e){}
+  await db.doc('team/'+em).set({role:'staff',staffId:staffId,name:name,phone:phone});
+  await db.doc('staff/'+staffId).update({login:true,loginEmail:em,phone:phone});
+}
+function loginErr(e){
+  const c=e&&e.code||'';
+  if(/email-already-in-use/.test(c))return 'الرقم ده متسجل قبل كده';
+  if(/weak-password/.test(c))return 'كلمة السر ضعيفة (6 حروف أو أرقام على الأقل)';
+  if(/network/.test(c))return 'اتأكد إن النت شغال';
+  return 'تعذر إنشاء حساب الدخول';
+}
 function authMsg(e){
   const c=e&&e.code||'';
   if(/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c))return 'الإيميل أو كلمة السر غلط';
@@ -1108,12 +1153,12 @@ async function doLogin(){
   S.lgEmail=em;
   if(!em||!pw){S.loginErr='اكتب الإيميل وكلمة السر';render(true);return;}
   S.loginBusy=true;S.loginErr='';render(true);
-  try{await auth.signInWithEmailAndPassword(em,pw);}catch(e){S.loginErr=authMsg(e);}
+  try{await auth.signInWithEmailAndPassword(loginId(em),pw);}catch(e){S.loginErr=authMsg(e);}
   S.loginBusy=false;render(true);
 }
 function loginView(){
   return '<header class="head"><span class="muted sm">دخول المدير</span><h1>'+esc(S.cfg.name)+'</h1></header>'
-    +'<section class="card form"><div class="field"><label for="lg-email">الإيميل</label><input id="lg-email" type="email" dir="ltr" autocomplete="username" value="'+esc(S.lgEmail||'')+'"></div>'
+    +'<section class="card form"><div class="field"><label for="lg-email">الإيميل أو رقم الموبايل</label><input id="lg-email" type="text" dir="ltr" autocomplete="username" value="'+esc(S.lgEmail||'')+'"></div>'
     +'<div class="field"><label for="lg-pass">كلمة السر</label><input id="lg-pass" type="password" dir="ltr" autocomplete="current-password"></div>'
     +(S.loginErr?'<p class="amt owe sm">'+esc(S.loginErr)+'</p>':'')
     +'<button class="btn primary" data-act="login"'+(S.loginBusy?' disabled':'')+'>'+(S.loginBusy?'جاري الدخول...':'دخول')+'</button></section>';
@@ -1208,11 +1253,11 @@ async function start(){
     },onErr));
   }else{
     await authReady;if(run!==startRun)return;
-    S.mode='owner';S.authed=!!authUser;S.canWrite=false;S.roleChk=!!authUser;
+    S.mode='owner';S.authed=!!authUser;S.canWrite=false;S.role=null;S.roleChk=!!authUser;
     subCfg();
     if(!authUser){render(true);return;}
     render(true);
-    try{const t=await db.doc('team/'+String(authUser.email||'').toLowerCase()).get();S.canWrite=!!(t.exists&&t.data().role==='admin');}catch(e){S.canWrite=false;}
+    try{const t=await db.doc('team/'+String(authUser.email||'').toLowerCase()).get();const td=t.exists?t.data():null;S.role=td&&(td.role==='admin'||td.role==='staff')?td.role:null;S.staffId=td&&td.staffId||null;S.canWrite=!!S.role;}catch(e){S.canWrite=false;}
     if(run!==startRun)return;
     S.roleChk=false;
     render(true);
@@ -1220,10 +1265,9 @@ async function start(){
     sub(db.collection('customers'),'customers');
     sub(db.collection('bookings'),'bookings');
     sub(db.collection('payments'),'payments');
-    sub(db.collection('requests'),'requests');
-    sub(db.collection('expenses'),'expenses');
+    if(S.role==='admin'){sub(db.collection('requests'),'requests');sub(db.collection('expenses'),'expenses');sub(db.collection('remittances'),'remits');}
+    else{S.loaded.requests=true;S.loaded.expenses=true;S.loaded.remits=true;}
     sub(db.collection('staff'),'staff');
-    sub(db.collection('remittances'),'remits');
     unsubs.push(db.collection('portal').onSnapshot(snap=>{S.portalH={};snap.docs.forEach(d=>{S.portalH[d.id]=d.data().h;});S.loaded.portal=true;scheduleSync();},onErr));
     unsubs.push(db.collection('busy').onSnapshot(snap=>{S.busyDocs={};snap.docs.forEach(d=>{const x=d.data();S.busyDocs[d.id]={date:x.date,start:x.start,duration:x.duration};});S.loaded.busy=true;scheduleSync();},onErr));
   }
