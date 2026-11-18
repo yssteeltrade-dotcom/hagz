@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>حجز الملعب</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+html,body{margin:0}body{font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}
+</style>
+<style>
+/* Layout: one narrow match-sheet column. The day is a pitch-line timeline: solid turf blocks for booked hours, dashed pitch-marking boxes for free gaps. */
+:root{
+  --bg:#edf1ec; --surface:#f9fbf8; --ink:#14231a; --muted:#566a5c; --line:#c7d3c8;
+  --turf:#1c6a41; --turf-soft:#d6e9dc; --on-turf:#ffffff;
+  --lamp:#c98a0b;
+  --owe:#b23a2d; --owe-soft:#f6dcd7; --credit:#1c6a41;
+  --f-display:'Changa','Cairo',system-ui,'Segoe UI',Tahoma,sans-serif;
+  --f-body:'IBM Plex Sans Arabic','Segoe UI',Tahoma,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1611; --surface:#15231a; --ink:#e8f0e9; --muted:#97ab9c; --line:#2b3e31;
+    --turf:#4cb882; --turf-soft:#1b3326; --on-turf:#07140c;
+    --lamp:#e0a830;
+    --owe:#f08272; --owe-soft:#3b1d19; --credit:#5cc58f;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1611; --surface:#15231a; --ink:#e8f0e9; --muted:#97ab9c; --line:#2b3e31;
+  --turf:#4cb882; --turf-soft:#1b3326; --on-turf:#07140c;
+  --lamp:#e0a830;
+  --owe:#f08272; --owe-soft:#3b1d19; --credit:#5cc58f;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  font-variant-numeric:tabular-nums;
+  padding-block:14px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:720px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;line-height:1.3;text-wrap:balance}
+h1{font-size:27px} h2{font-size:19px} h3{font-size:16px}
+p{margin:0}
+.muted{color:var(--muted)} .sm{font-size:13px}
+small{display:block;font-size:13px;color:var(--muted)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--lamp);outline-offset:2px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--turf);border-color:var(--turf);color:var(--on-turf)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:38px;padding:0 14px;font-size:14px}
+.btn.danger{color:var(--owe);border-color:var(--owe);background:transparent}
+.btn:disabled{opacity:.5;cursor:default}
+.chip{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--turf);border-color:var(--turf);color:var(--on-turf)}
+.chip:disabled{opacity:.4;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+
+.head{display:flex;flex-direction:column;gap:2px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.tabs button{min-height:46px;border:0;background:transparent;cursor:pointer;font-weight:600;font-size:13px;padding:0 2px}
+.tabs button[aria-selected="true"]{background:var(--turf);color:var(--on-turf)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.form{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-size:13px;color:var(--muted);font-weight:500}
+input,select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:0 12px;font-size:16px}
+input[type="number"],input[type="tel"],input[type="date"]{direction:ltr;text-align:right}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kv{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+.datenav{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.dayline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.dayline .t{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tag{display:inline-block;padding:1px 10px;border-radius:999px;background:var(--lamp);color:#1b1404;font-size:12px;font-weight:600}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.summary div{padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.summary div+div{border-inline-start:1px solid var(--line)}
+.summary b{font-family:var(--f-display);font-size:16px}
+
+.strip{position:relative;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden}
+.strip i{position:absolute;top:0;bottom:0;background:var(--turf);border-inline-start:2px solid var(--surface)}
+.ticks{position:relative;height:20px;font-size:11px;color:var(--muted);margin-top:4px}
+.ticks span{position:absolute;top:0;transform:translateX(50%);white-space:nowrap}
+
+.slots{display:flex;flex-direction:column;gap:8px}
+.slot{display:grid;grid-template-columns:auto 1fr auto;gap:8px 14px;align-items:center;padding:12px 14px;border-radius:10px;text-align:start;width:100%}
+.slot .time{display:flex;flex-direction:column;min-width:74px}
+.slot .time b{font-family:var(--f-display);font-size:17px;line-height:1.3;white-space:nowrap}
+.slot .time small{white-space:nowrap}
+.slot .who{display:flex;flex-direction:column;min-width:0}
+.slot .who strong{overflow-wrap:anywhere}
+.slot.booked{background:var(--turf-soft);border:1px solid var(--line);cursor:pointer}
+.slot.done{background:var(--surface);border:1.5px solid var(--turf)}
+.btn.off{opacity:.5;pointer-events:none}
+.payinfo{border:1.5px dashed var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.payinfo p{margin:0}
+.slot.free{border:1.5px dashed var(--line);background:transparent}
+.starts{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid currentColor}
+.pill.owe{background:var(--owe-soft);color:var(--owe)}
+.pill.credit{color:var(--credit);background:var(--surface)}
+.pill.even{color:var(--muted);background:var(--surface)}
+
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;text-align:start;cursor:pointer}
+.row span{display:flex;flex-direction:column;min-width:0}
+.list{display:flex;flex-direction:column;gap:8px}
+.two-stat{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.two-stat div{padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.two-stat div+div{border-inline-start:1px solid var(--line)}
+.two-stat b{font-family:var(--f-display);font-size:20px}
+
+.bal{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:1.25}
+.bal.owe,.amt.owe{color:var(--owe)} .bal.credit,.amt.credit{color:var(--credit)}
+.led{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.led:first-child{border-top:0}
+.led .amt{font-weight:600;white-space:nowrap}
+.led .foot{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.linkrow{display:flex;flex-wrap:wrap;gap:8px}
+.linkrow input{flex:1 1 220px}
+
+.empty{padding:18px 14px;border:1.5px dashed var(--line);border-radius:10px;color:var(--muted);text-align:center}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal .wd{text-align:center;font-size:11px;color:var(--muted);padding:4px 0}
+.cal button{min-height:58px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px}
+.cal button b{font-family:var(--f-display);font-size:16px}
+.cal button small{font-size:11px;white-space:nowrap}
+.cal button.has{background:var(--turf-soft)}
+.cal button.today{outline:2px solid var(--lamp);outline-offset:-2px}
+.cal .pad{min-height:58px}
+
+.ov{position:fixed;inset:0;z-index:50;background:rgba(5,12,8,.55);display:flex;align-items:flex-end;justify-content:center}
+.panel{width:100%;max-width:560px;max-height:92%;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#toast{position:fixed;inset-inline:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;z-index:60;opacity:0}
+#toast.on{opacity:1}
+#toast span{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;max-width:90%}
+@media (prefers-reduced-motion:no-preference){#toast{transition:opacity .2s}}
+</style>
+</head>
+<body>
+
+<div id="app" class="wrap" dir="rtl" lang="ar"><div id="main"></div></div>
+<div id="sheet" dir="rtl" lang="ar"></div>
+<div id="toast" role="status" dir="rtl"><span id="toast-t"></span></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+
+(function(){
+'use strict';
+/* ====== إعداد Firebase: الصق هنا بيانات مشروعك (من Project settings > Your apps) ====== */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyCXt4ixy8oX9DYIgPFKKGRQayPGK5y-vN8",
+  authDomain:"hagz-b51c0.firebaseapp.com",
+  projectId:"hagz-b51c0",
+  appId:"1:31618240541:web:f88742a65920807f1bf6f4"
+};
+/* ================================================================================== */
+document.documentElement.dir='rtl';document.documentElement.lang='ar';
+
+/* ---------- helpers ---------- */
+const $=(s,r)=>(r||document).querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
+const r2=n=>Math.round((+n||0)*100)/100;
+const money=n=>nf.format(r2(n))+' ج';
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseKey=k=>new Date(k+'T12:00:00');
+const addDays=(k,n)=>{const d=parseKey(k);d.setDate(d.getDate()+n);return ymd(d);};
+function fmtDate(k,opt){try{return parseKey(k).toLocaleDateString('ar-EG-u-nu-latn',opt);}catch(e){return k;}}
+const dayLabel=k=>fmtDate(k,{weekday:'long',day:'numeric',month:'long'});
+const shortDate=k=>fmtDate(k,{day:'numeric',month:'short',year:'numeric'});
+function fmtTime(m){const h=Math.floor(m/60)%24,mm=m%60;return (h%12||12)+':'+pad(mm)+' '+(h>=12?'م':'ص');}
+function fmtHour(m){const h=Math.floor(m/60)%24;return (h%12||12)+(h>=12?'م':'ص');}
+function durLabel(m){
+  const h=Math.floor(m/60),r=m%60;
+  if(h===0)return r===30?'نصف ساعة':r+' دقيقة';
+  const hs=h===1?'ساعة':h===2?'ساعتان':h+' ساعات';
+  if(r===0)return hs;
+  return hs+' '+(r===30?'ونصف':'و'+r+' دقيقة');
+}
+function genCode(){
+  const a='abcdefghjkmnpqrstuvwxyz23456789',r=new Uint8Array(10);
+  try{crypto.getRandomValues(r);}catch(e){for(let i=0;i<r.length;i++)r[i]=Math.floor(Math.random()*256);}
+  let s='';for(let i=0;i<r.length;i++)s+=a[r[i]%a.length];return s;
+}
+function toast(msg){const t=$('#toast');$('#toast-t').textContent=msg;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),3200);}
+
+/* ---------- state ---------- */
+const DEF={name:'ملعب الكرة',open:16,close:26,dayPrice:150,nightPrice:250,nightFrom:18,baseUrl:''};
+const S={cfg:Object.assign({},DEF),customers:[],bookings:[],payments:[],requests:[],expenses:[],staff:[],remits:[],lastStaff:null,rmonth:null,pub:null,date:null,tab:'day',cid:null,filter:'all',
+  authed:false,portalH:{},busyDocs:{},canWrite:false,mode:'boot',code:null,cust:null,loaded:{},err:null,slow:false,armed:null};
+let db=null,user=null,unsubs=[],subFor=null;
+const realToday=()=>ymd(new Date());
+function bizToday(){const n=new Date();if(S.cfg.close>24&&n.getHours()<S.cfg.close-24)n.setDate(n.getDate()-1);return ymd(n);}
+
+/* ---------- accounting ---------- */
+function balances(){
+  const m={};const g=id=>m[id]||(m[id]={due:0,paid:0,open:0,net:0});S.customers.concat(S.cust?[S.cust]:[]).forEach(c=>{g(c.id).open=r2(+c.openingBalance||0);});
+  S.bookings.forEach(b=>{if(counted(b))g(b.customerId).due+=+b.price||0;});
+  S.payments.forEach(p=>{g(p.customerId).paid+=+p.amount||0;});
+  Object.keys(m).forEach(k=>{const x=m[k];x.due=r2(x.due);x.paid=r2(x.paid);x.net=r2(x.paid-x.due+x.open);});
+  return m;
+}
+const balOf=(m,id)=>m[id]||{due:0,paid:0,open:0,net:0};
+function pill(net,cust){
+  if(net<0)return '<span class="pill owe">'+(cust?'عليك ':'عليه ')+money(-net)+'</span>';
+  if(net>0)return '<span class="pill credit">'+(cust?'لك ':'له ')+money(net)+'</span>';
+  return '<span class="pill even">'+(cust?'حسابك مظبوط':'حسابه مظبوط')+'</span>';
+}
+const runText=n=>n<0?'عليه '+money(-n):n>0?'له '+money(n):'صفر';
+function ledger(cid){
+  const rows=[];
+  const cu=S.mode==='customer'?S.cust:S.customers.find(x=>x.id===cid);
+  const ob=cu?r2(+cu.openingBalance||0):0;
+  if(ob)rows.push({k:'',kind:'o',id:'open',date:'',label:'رصيد سابق',note:'',amount:Math.abs(ob),delta:ob});
+  S.bookings.filter(b=>b.customerId===cid&&counted(b)).forEach(b=>rows.push({k:b.date+'T'+String(b.start).padStart(4,'0'),kind:stOf(b)==='cancelled'?'x':'b',id:b.id,date:b.date,
+    label:(stOf(b)==='cancelled'?'إلغاء محسوب · ':'حجز ')+fmtTime(b.start)+' · '+durLabel(b.duration),note:[(stOf(b)==='cancelled'?b.cancelReason:''),(+b.discount>0?'خصم '+money(b.discount):''),b.note].filter(Boolean).join(' · '),amount:+b.price||0,delta:-(+b.price||0)}));
+  S.payments.filter(p=>p.customerId===cid).forEach(p=>rows.push({k:p.date+'T9999'+String(p.createdAt||0),kind:'p',id:p.id,date:p.date,
+    label:'دفعة',note:p.note,amount:+p.amount||0,delta:+p.amount||0}));
+  rows.sort((a,b)=>a.k<b.k?-1:a.k>b.k?1:0);
+  let run=0;rows.forEach(r=>{run=r2(run+r.delta);r.run=run;});
+  return rows.reverse();
+}
+
+/* ---------- pricing & ledger helpers ---------- */
+function normCfg(d){const c=Object.assign({},DEF,d);if(!c.baseUrl)c.baseUrl=location.href.split('#')[0];if(d.price!=null&&d.dayPrice==null){c.dayPrice=+d.price;c.nightPrice=+d.price;}return c;}
+function listPrice(start,dur){
+  const nf=S.cfg.nightFrom*60;let tot=0;
+  for(let t=start;t<start+dur;t+=15){const len=Math.min(15,start+dur-t);tot+=(t>=nf?+S.cfg.nightPrice:+S.cfg.dayPrice)*len/60;}
+  return Math.round(tot);
+}
+function ledAmt(r){
+  if(r.kind==='o')return [r.delta>0?'credit':'owe',(r.delta>0?'له ':'عليه ')+money(r.amount)];
+  return r.kind==='p'?['credit','مدفوع '+money(r.amount)]:['owe','مطلوب '+money(r.amount)];
+}
+function ledSub(r){return (r.date?shortDate(r.date):'')+(r.note?(r.date?' · ':'')+esc(r.note):'');}
+function stOf(b){return b.status||'done';}
+function isActive(b){return stOf(b)!=='cancelled';}
+function counted(b){const s=stOf(b);return s==='done'||(s==='cancelled'&&!!b.charged);}
+
+/* ---------- schedule ---------- */
+function segments(date){
+  const o=S.cfg.open*60,c=S.cfg.close*60;
+  const bs=S.bookings.filter(b=>b.date===date&&isActive(b)).sort((a,b)=>a.start-b.start);
+  const segs=[];let cur=o;
+  bs.forEach(b=>{
+    if(b.start>cur)segs.push({type:'free',start:cur,end:b.start});
+    segs.push({type:'booked',b:b,start:b.start,end:b.start+b.duration});
+    cur=Math.max(cur,b.start+b.duration);
+  });
+  if(cur<c)segs.push({type:'free',start:cur,end:c});
+  return segs;
+}
+
+/* ---------- views ---------- */
+function stateCard(title,text){return '<div class="card"><h2>'+esc(title)+'</h2><p class="muted" style="margin-top:6px">'+esc(text)+'</p></div>';}
+function ready(){
+  if(S.mode==='owner')return S.loaded.cfg&&S.loaded.customers&&S.loaded.bookings&&S.loaded.payments&&S.loaded.requests&&S.loaded.expenses&&S.loaded.staff&&S.loaded.remits;
+  if(S.mode==='public')return S.loaded.cfg&&S.loaded.bookings;
+  if(S.mode==='customer')return S.loaded.cfg&&S.loaded.cust&&(!S.cust||(S.loaded.bookings&&S.loaded.payments));
+  return true;
+}
+function render(force){
+  const main=$('#main');if(!main)return;
+  const ae=document.activeElement;
+  if(!force&&main.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;
+  let html;
+  if(S.mode==='boot')html=stateCard('جاري التحميل','لحظات ونفتح الحجوزات.');
+  else if(S.mode==='nodb')html=stateCard(S.nodbTitle||'مش شغال','');
+  else if(S.mode==='owner'&&!S.authed)html=loginView();
+  else if(S.mode==='owner'&&S.roleChk)html=stateCard('جاري التحميل','لحظات ونفتح الحجوزات.');
+  else if(S.mode==='owner'&&!S.canWrite)html=noAccessView();
+  else if(S.err==='permission-denied')html=stateCard('مفيش صلاحية','قواعد الأمان على Firebase مش مظبوطة، أو الحساب مش مضاف في team. راجع ملف README.');
+  else if(!ready())html=stateCard(S.slow?'البيانات مش واصلة لسه':'جاري التحميل',S.slow?'اتأكد إن النت شغال، وهتظهر لوحدها أول ما تتوصل.':'لحظات ونفتح الحجوزات.');
+  else if(S.mode==='public')html=publicView();
+  else if(S.mode==='customer')html=customerView();
+  else html=ownerView();
+  main.innerHTML=html;if(S.mode==='public')refreshSend();
+}
+
+function ownerView(){
+  S.date=S.date||bizToday();
+  const nw=S.requests.filter(r=>r.status==='awaiting').length;
+  const tabs=[['day','الحجوزات'],['req','الطلبات'+(nw?' ('+nw+')':'')],['rev','الإيرادات'],['customers','العملاء'],['settings','الإعدادات']];
+  return '<header class="head"><h1>'+esc(S.cfg.name)+'</h1><span class="muted sm">جدول الحجز وحسابات العملاء</span></header>'
+    +'<div class="tabs" role="tablist">'+tabs.map(t=>'<button role="tab" aria-selected="'+(S.tab===t[0])+'" data-act="tab" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>'
+    +(S.tab==='day'?(S.dayOpen?dayView():calView()):S.tab==='req'?reqView():S.tab==='rev'?revView():S.tab==='customers'?(S.cid?custDetail():custList()):settingsView());
+}
+
+function dayView(){
+  const date=S.date,segs=segments(date),bs=S.bookings.filter(b=>b.date===date&&isActive(b)),cx=S.bookings.filter(b=>b.date===date&&!isActive(b)).sort((a,z)=>a.start-z.start);
+  const bal=balances(),cm=new Map(S.customers.map(c=>[c.id,c]));
+  const booked=bs.reduce((a,b)=>a+b.duration,0);
+  const free=segs.filter(s=>s.type==='free').reduce((a,s)=>a+s.end-s.start,0);
+  const income=S.bookings.filter(b=>b.date===date&&counted(b)).reduce((a,b)=>a+(+b.price||0),0);const pend=bs.filter(b=>stOf(b)==='booked').length;
+  const pendHtml=pend?'<p class="muted sm">'+pend+(pend===1?' حجز':' حجوزات')+' لسه بانتظار التسجيل. اضغط على الحجز بعد اللعب وسجّل "تم" أو "إلغاء".</p>':'';
+  const cxHtml=cx.length?'<section class="card"><h3>حجوزات ملغية</h3><div class="list" style="margin-top:8px">'+cx.map(b=>{const c=cm.get(b.customerId);return '<button class="row" data-act="openBooking" data-id="'+esc(b.id)+'"><span><strong>'+esc(c?c.name:'عميل محذوف')+'</strong><small>'+fmtTime(b.start)+' · '+durLabel(b.duration)+' · '+esc(b.cancelReason||'')+'</small></span>'+(b.charged?'<span class="pill owe">محسوب '+money(b.price)+'</span>':'<span class="pill even">بدون حساب</span>')+'</button>';}).join('')+'</div></section>':'';
+  const isToday=date===bizToday();
+  let rs=S.cfg.open*60,re=S.cfg.close*60;
+  bs.forEach(b=>{rs=Math.min(rs,b.start);re=Math.max(re,b.start+b.duration);});
+  const span=Math.max(re-rs,30),pct=v=>(v-rs)/span*100;
+  const blocks=segs.filter(s=>s.type==='booked').map(s=>'<i style="inset-inline-start:'+pct(s.start)+'%;width:'+((s.end-s.start)/span*100)+'%"></i>').join('');
+  let ticks='';for(let h=Math.ceil(rs/60);h*60<=re;h+=2)ticks+='<span style="inset-inline-start:'+pct(h*60)+'%">'+fmtHour(h*60)+'</span>';
+  const rows=segs.map(s=>{
+    if(s.type==='booked'){
+      const b=s.b,c=cm.get(b.customerId);
+      return '<button class="slot booked'+(stOf(b)==='done'?' done':'')+'" data-act="openBooking" data-id="'+esc(b.id)+'"><span class="time"><b>'+fmtTime(b.start)+'</b><small>إلى '+fmtTime(b.start+b.duration)+'</small></span>'
+        +'<span class="who"><strong>'+esc(c?c.name:'عميل محذوف')+'</strong><small>'+durLabel(b.duration)+(stOf(b)==='done'?(+b.discount>0?' · خصم '+money(b.discount):''):' · المتوقع '+money(b.listPrice||0))+(b.seriesId?' · ثابت':'')+(b.note?' · '+esc(b.note):'')+'</small></span>'+(stOf(b)==='done'?'<span class="pill credit">تم · '+money(b.price)+'</span>':'<span class="pill even">محجوز</span>')+'</button>';
+    }
+    const chips=[];for(let t=s.start;t+60<=s.end&&chips.length<12;t+=60)chips.push(t);
+    return '<div class="slot free"><span class="time"><b>'+fmtTime(s.start)+'</b><small>إلى '+fmtTime(s.end)+'</small></span>'
+      +'<span class="who"><strong>متاح</strong><small>'+durLabel(s.end-s.start)+'</small></span>'
+      +'<button class="btn small primary" data-act="newBooking" data-start="'+s.start+'">احجز</button>'
+      +(chips.length>1?'<div class="starts"><span class="muted sm">أو ابدأ من</span>'+chips.map(t=>'<button class="chip" data-act="newBooking" data-start="'+t+'">'+fmtTime(t)+'</button>').join('')+'</div>':'')+'</div>';
+  }).join('');
+  return '<div><button class="btn ghost small" data-act="closeDay">كل أيام الشهر</button></div><div class="datenav"><button class="btn ghost small" data-act="shift" data-d="-1">اليوم السابق</button>'
+    +'<input type="date" id="datePick" value="'+esc(date)+'" aria-label="اختيار اليوم"><button class="btn ghost small" data-act="shift" data-d="1">اليوم التالي</button></div>'
+    +'<div class="dayline"><div class="t"><h2>'+dayLabel(date)+'</h2>'+(isToday?'<span class="tag">اليوم</span>':'<button class="btn ghost small" data-act="goToday">رجوع لليوم</button>')+'</div>'
+    +'<button class="btn primary" data-act="newBooking">حجز جديد</button></div>'
+    +'<div class="summary"><div><small>محجوز</small><b>'+(booked?durLabel(booked):'لا يوجد')+'</b></div><div><small>متاح</small><b>'+(free?durLabel(free):'لا يوجد')+'</b></div><div><small>إيراد اليوم</small><b>'+money(income)+'</b></div></div>'
+    +'<div><div class="strip" aria-hidden="true">'+blocks+'</div><div class="ticks" aria-hidden="true">'+ticks+'</div></div>'
+    +pendHtml+'<div class="slots">'+rows+'</div>'+cxHtml
+    +(bs.length?'':'<p class="muted sm">مفيش حجوزات في اليوم ده لسه. اضغط "احجز" على أي ميعاد متاح.</p>');
+}
+
+function calView(){
+  S.month=S.month||bizToday().slice(0,7);
+  const ym=S.month.split('-').map(Number),y=ym[0],m=ym[1];
+  const first=new Date(y,m-1,1,12),days=new Date(y,m,0).getDate(),off=(first.getDay()+1)%7;
+  const per={};S.bookings.filter(isActive).forEach(b=>{const x=per[b.date]||(per[b.date]={n:0,min:0});x.n++;x.min+=b.duration;});
+  const today=bizToday(),wd=['سبت','أحد','اثنين','ثلاث','أربع','خميس','جمعة'];
+  let cells=wd.map(n=>'<div class="wd">'+n+'</div>').join('');
+  for(let i=0;i<off;i++)cells+='<div class="pad"></div>';
+  for(let d=1;d<=days;d++){
+    const k=y+'-'+pad(m)+'-'+pad(d),x=per[k];
+    cells+='<button data-act="openDay" data-d="'+k+'" class="'+(x?'has ':'')+(k===today?'today':'')+'" aria-label="'+esc(dayLabel(k))+'"><b>'+d+'</b><small>'+(x?x.n+' حجز':'فاضي')+'</small></button>';
+  }
+  const title=first.toLocaleDateString('ar-EG-u-nu-latn',{month:'long',year:'numeric'});
+  return '<div class="datenav"><button class="btn ghost small" data-act="month" data-m="-1">الشهر السابق</button><h2 style="text-align:center">'+title+'</h2><button class="btn ghost small" data-act="month" data-m="1">الشهر التالي</button></div>'
+    +'<div class="dayline"><span class="muted sm">اضغط على أي يوم عشان تفتح حجوزاته</span><button class="btn primary" data-act="openDay" data-d="'+today+'">حجوزات اليوم</button></div>'
+    +'<div class="cal">'+cells+'</div>';
+}
+
+function custList(){
+  const bal=balances();
+  const rows=S.customers.map(c=>({c:c,b:balOf(bal,c.id)}));
+  const owe=rows.filter(r=>r.b.net<0),cred=rows.filter(r=>r.b.net>0);
+  const sumOwe=r2(owe.reduce((a,r)=>a-r.b.net,0)),sumCred=r2(cred.reduce((a,r)=>a+r.b.net,0));
+  let shown=rows.slice();if(S.filter==='owe')shown=owe.slice();if(S.filter==='credit')shown=cred.slice();
+  shown.sort((a,b)=>a.b.net-b.b.net||String(a.c.name||'').localeCompare(String(b.c.name||''),'ar'));
+  const fl=[['all','الكل ('+rows.length+')'],['owe','عليهم فلوس ('+owe.length+')'],['credit','لهم فلوس ('+cred.length+')']];
+  return '<div class="two-stat"><div><small>إجمالي اللي عليهم</small><b class="amt owe">'+money(sumOwe)+'</b></div><div><small>إجمالي اللي لهم</small><b class="amt credit">'+money(sumCred)+'</b></div></div>'
+    +'<div class="dayline"><div class="chips">'+fl.map(f=>'<button class="chip" aria-pressed="'+(S.filter===f[0])+'" data-act="filter" data-f="'+f[0]+'">'+f[1]+'</button>').join('')+'</div>'
+    +'<button class="btn primary small" data-act="addCustomer">عميل جديد</button></div>'
+    +(shown.length?'<div class="list">'+shown.map(r=>'<button class="row" data-act="openCustomer" data-id="'+esc(r.c.id)+'"><span><strong>'+esc(r.c.name)+'</strong>'+(r.c.phone?'<small>'+esc(r.c.phone)+'</small>':'')+'</span>'+pill(r.b.net,false)+'</button>').join('')+'</div>'
+      :'<div class="empty">'+(rows.length?'مفيش عملاء في الفلتر ده.':'لسه مفيش عملاء. أول حجز تسجله هيضيف العميل تلقائياً، أو اضغط "عميل جديد".')+'</div>');
+}
+
+function custLink(c){return S.cfg.baseUrl&&c.code?String(S.cfg.baseUrl).split('#')[0]+'#c-'+c.code:'';}
+function waNum(p){let d=String(p||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);else if(d.startsWith('0'))d='20'+d.slice(1);return d;}
+
+function custDetail(){
+  const c=S.customers.find(x=>x.id===S.cid);
+  if(!c){S.cid=null;return custList();}
+  const b=balOf(balances(),c.id),rows=ledger(c.id),link=custLink(c);
+  const cls=b.net<0?'owe':b.net>0?'credit':'';
+  const msg='أهلاً '+c.name+'، ده رابط حسابك في '+S.cfg.name+': '+link;
+  const wa='https://wa.me/'+waNum(c.phone)+'?text='+encodeURIComponent(msg);
+  return '<div class="dayline"><button class="btn ghost small" data-act="back">كل العملاء</button><button class="btn ghost small" data-act="editCustomer" data-id="'+esc(c.id)+'">تعديل البيانات</button></div>'
+    +'<section class="card"><h2>'+esc(c.name)+'</h2>'+(c.phone?'<small>'+esc(c.phone)+'</small>':'')
+    +'<div class="bal '+cls+'" style="margin-top:8px">'+(b.net<0?'عليه '+money(-b.net):b.net>0?'له '+money(b.net):'حسابه مظبوط')+'</div>'
+    +'<small>إجمالي الحجوزات '+money(b.due)+' · إجمالي المدفوع '+money(b.paid)+(b.open?' · رصيد سابق '+(b.open>0?'له ':'عليه ')+money(Math.abs(b.open)):'')+'</small>'
+    +'<div style="margin-top:12px"><button class="btn primary" data-act="pay" data-id="'+esc(c.id)+'">تسجيل دفعة</button></div></section>'
+    +'<section class="card form"><h3>رابط حساب العميل (للعرض فقط)</h3>'
+    +(link?'<div class="linkrow"><input id="linkbox" readonly value="'+esc(link)+'" aria-label="رابط الحساب"><button class="btn small" data-act="copyLink" data-link="'+esc(link)+'">نسخ</button><a class="btn small" target="_blank" rel="noopener" href="'+esc(wa)+'">إرسال واتساب</a></div><small>العميل يشوف حسابه بس، ومش بيقدر يعدّل أي حاجة.</small>'
+      :'<p class="muted sm">الصق رابط البرنامج في تبويب "الإعدادات" عشان يظهر رابط الحساب هنا.</p>')+'</section>'
+    +'<section class="card"><h3>كشف الحساب</h3>'+(rows.length?rows.map(r=>{
+      const key='d-'+r.kind+'-'+r.id,armed=S.armed===key;
+      return '<div class="led"><div><strong>'+esc(r.label)+'</strong><small>'+ledSub(r)+'</small></div>'
+        +'<div class="amt '+ledAmt(r)[0]+'">'+ledAmt(r)[1]+'</div>'
+        +'<div class="foot"><span class="muted sm">الرصيد بعدها: '+runText(r.run)+'</span>'+(r.kind==='o'?'':'<button class="btn small '+(armed?'danger':'ghost')+'" data-act="del" data-key="'+key+'" data-kind="'+r.kind+'" data-id="'+esc(r.id)+'">'+(armed?'اضغط للتأكيد':'حذف')+'</button>')+'</div></div>';
+    }).join(''):'<p class="muted sm" style="margin-top:6px">لسه مفيش حركات على الحساب ده.</p>')+'</section>';
+}
+
+function settingsView(){
+  const c=S.cfg;
+  const hrs=(from,to,sel)=>{let o='';for(let h=from;h<=to;h++)o+='<option value="'+h+'"'+(h===sel?' selected':'')+'>'+fmtTime(h*60)+(h>24?' (اليوم التالي)':'')+'</option>';return o;};
+  return '<section class="card form"><div class="field"><label for="st-name">اسم الملعب</label><input id="st-name" value="'+esc(c.name)+'"></div>'
+    +'<div class="two"><div class="field"><label for="st-open">بداية الحجز</label><select id="st-open">'+hrs(0,23,+c.open)+'</select></div>'
+    +'<div class="field"><label for="st-close">نهاية الحجز</label><select id="st-close">'+hrs(1,30,+c.close)+'</select></div></div>'
+    +'<div class="two"><div class="field"><label for="st-day">سعر الساعة نهاراً (ج)</label><input id="st-day" type="number" inputmode="decimal" min="0" step="any" value="'+esc(c.dayPrice)+'"></div>'
+    +'<div class="field"><label for="st-night">سعر الساعة ليلاً (ج)</label><input id="st-night" type="number" inputmode="decimal" min="0" step="any" value="'+esc(c.nightPrice)+'"></div></div>'
+    +'<div class="field"><label for="st-nf">الليل يبدأ من</label><select id="st-nf">'+hrs(12,24,+c.nightFrom)+'</select><small>أي وقت قبل ده بيتحسب بسعر النهار وبعده بسعر الليل. الحجز اللي بيعدّي الميعاد ده بيتحسب كل جزء بسعره.</small></div>'
+    +'<div class="field"><label for="st-wa">رقم واتساب لاستقبال طلبات الحجز</label><input id="st-wa" type="tel" dir="ltr" inputmode="tel" value="'+esc(c.waPhone||'')+'"><small>مثال: 01012345678</small></div>'
+    +'<div class="two"><div class="field"><label for="st-wallet">رقم المحفظة (للعربون)</label><input id="st-wallet" type="tel" dir="ltr" inputmode="tel" value="'+esc(c.wallet||'')+'"></div>'
+    +'<div class="field"><label for="st-insta">عنوان إنستاباي (للعربون)</label><input id="st-insta" dir="ltr" value="'+esc(c.instapay||'')+'"></div></div>'
+    +'<div class="field"><label for="st-url">رابط البرنامج</label><input id="st-url" type="url" dir="ltr" value="'+esc(c.baseUrl||'')+'"><small>بيتستخدم لعمل رابط حساب لكل عميل.</small></div>'
+    +'<button class="btn primary" data-act="saveSettings">حفظ الإعدادات</button></section>'
+    +'<section class="card form"><h3>نقل البيانات من النسخة القديمة</h3><small>اختار ملف migration.json المرفق، وبعدها اضغط استيراد. العملاء والحجوزات والدفعات بترجع بنفس روابطها.</small>'
+    +'<input id="im-file" type="file" accept=".json,application/json"><button class="btn" data-act="importData">استيراد البيانات</button></section>'
+    +'<section class="card form"><h3>الحساب</h3><small>داخل بـ '+esc(authUser&&authUser.email||'')+'</small><button class="btn ghost" data-act="logout">تسجيل خروج</button></section>';
+}
+
+function customerView(){
+  const c=S.cust;
+  if(!c)return stateCard('الحساب مش موجود','اتأكد إن الرابط كامل زي ما صاحب الملعب بعته.');
+  const b=balOf(balances(),c.id),rows=ledger(c.id);
+  const up=S.bookings.filter(x=>x.customerId===c.id&&x.date>=realToday()&&stOf(x)==='booked').sort((a,z)=>(a.date+String(a.start).padStart(4,'0'))<(z.date+String(z.start).padStart(4,'0'))?-1:1);
+  const cls=b.net<0?'owe':b.net>0?'credit':'';
+  return '<header class="head"><span class="muted sm">'+esc(S.cfg.name)+'</span><h1>'+esc(c.name)+'</h1></header>'
+    +'<section class="card"><small>حسابك الحالي</small><div class="bal '+cls+'">'+(b.net<0?'عليك '+money(-b.net):b.net>0?'لك عندنا '+money(b.net):'حسابك مظبوط')+'</div>'
+    +'<small>إجمالي الحجوزات '+money(b.due)+' · إجمالي ما دفعته '+money(b.paid)+(b.open?' · رصيد سابق '+(b.open>0?'لك ':'عليك ')+money(Math.abs(b.open)):'')+'</small></section>'
+    +(up.length?'<section class="card"><h3>حجوزاتك الجاية</h3>'+up.map(x=>'<div class="led"><div><strong>'+dayLabel(x.date)+'</strong><small>'+fmtTime(x.start)+' إلى '+fmtTime(x.start+x.duration)+' · '+durLabel(x.duration)+'</small></div><div class="amt muted">بانتظار اللعب</div></div>').join('')+'</section>':'')
+    +'<section class="card"><h3>كشف الحساب</h3>'+(rows.length?rows.map(r=>'<div class="led"><div><strong>'+esc(r.label)+'</strong><small>'+ledSub(r)+'</small></div>'
+      +'<div class="amt '+ledAmt(r)[0]+'">'+ledAmt(r)[1]+'</div>'
+      +'<div class="foot"><span class="muted sm">الرصيد بعدها: '+(r.run<0?'عليك '+money(-r.run):r.run>0?'لك '+money(r.run):'صفر')+'</span></div></div>').join(''):'<p class="muted sm" style="margin-top:6px">لسه مفيش حركات على حسابك.</p>')+'</section>'
+    +'<p class="muted sm">الصفحة دي للعرض فقط، ومفيش حاجة فيها تتعدّل.</p>';
+}
+
+/* ---------- online booking & requests ---------- */
+function nowMin(){const n=new Date();let m=n.getHours()*60+n.getMinutes();if(S.cfg.close>24&&n.getHours()<S.cfg.close-24)m+=1440;return m;}
+function pubWindows(date){
+  const lo=date===bizToday()?Math.ceil((nowMin()+30)/15)*15:0;
+  return segments(date).filter(s=>s.type==='free').map(s=>({start:Math.max(s.start,lo),end:s.end})).filter(w=>w.end-w.start>=30);
+}
+function pubMsg(){
+  const P=S.pub,price=listPrice(P.start,P.dur),dep=Math.ceil(price/2);
+  const nm=String(P.name||'').replace(/[|\n]/g,' ').trim(),ph=String(P.phone||'').replace(/[^\d+]/g,'');
+  return ['طلب حجز ملعب','الاسم: '+nm,'الموبايل: '+ph,'اليوم: '+dayLabel(P.date),'الميعاد: '+fmtTime(P.start)+' إلى '+fmtTime(P.start+P.dur)+' ('+durLabel(P.dur)+')','السعر المتوقع: '+money(price),'العربون (نصف السعر): '+money(dep),'هحوّل العربون وأبعت لقطة التحويل.','رمز الطلب: #bk|'+P.date+'|'+P.start+'|'+P.dur+'|'+nm+'|'+ph].join('\n');
+}
+function pubLink(){
+  const P=S.pub;if(!P||P.start==null||P.dur<30)return '';
+  const n=waNum(S.cfg.waPhone);if(!n)return '';
+  return 'https://wa.me/'+n+'?text='+encodeURIComponent(pubMsg());
+}
+function refreshSend(){
+  const b=$('#pb-send');if(!b)return;
+  const P=S.pub;
+  b.disabled=!(P.start!=null&&String(P.name||'').trim().length>=2&&String(P.phone||'').replace(/\D/g,'').length>=10)||!!S.pubBusy;
+}
+function sentView(){
+  const P=S.pub,s=P.sent,c=S.cfg,n=waNum(c.waPhone);
+  const msg=['لقطة تحويل عربون حجز ملعب','الاسم: '+s.name,'اليوم: '+dayLabel(s.date),'الميعاد: '+fmtTime(s.start)+' إلى '+fmtTime(s.start+s.duration),'العربون: '+money(s.dep)].join('\n');
+  const pay=[];
+  if(c.wallet)pay.push('محفظة إلكترونية: <b dir="ltr">'+esc(c.wallet)+'</b>');
+  if(c.instapay)pay.push('إنستاباي: <b dir="ltr">'+esc(c.instapay)+'</b>');
+  return '<header class="head"><span class="muted sm">حجز ميعاد</span><h1>'+esc(c.name)+'</h1></header>'
+    +'<section class="card form"><h3>وصلنا طلبك</h3>'
+    +'<div><strong>'+dayLabel(s.date)+'</strong><small>'+fmtTime(s.start)+' إلى '+fmtTime(s.start+s.duration)+' · '+durLabel(s.duration)+'</small></div>'
+    +'<div class="kv"><span class="muted">السعر المتوقع</span><strong>'+money(s.price)+'</strong></div>'
+    +'<div class="kv"><span class="muted">العربون المطلوب</span><strong>'+money(s.dep)+'</strong></div>'
+    +'<div class="payinfo"><strong>الخطوة الجاية: حوّل العربون</strong>'+(pay.length?pay.map(x=>'<p>'+x+'</p>').join(''):'<p>طريقة الدفع هتتبعتلك على واتساب.</p>')
+    +'<p class="muted sm">الحجز مش بيتأكد إلا بعد ما صاحب الملعب يتأكد إن العربون وصل.</p></div>'
+    +(n?'<a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/'+n+'?text='+encodeURIComponent(msg)+'">ابعت لقطة التحويل على واتساب</a>':'')
+    +'<button class="btn ghost" data-act="pubAgain">طلب حجز تاني</button></section>';
+}
+async function pubSubmit(){
+  const P=S.pub;if(!P||S.pubBusy||P.start==null)return;
+  const name=String(P.name||'').replace(/\s+/g,' ').trim().slice(0,60),phone=String(P.phone||'').replace(/[^\d+]/g,'').slice(0,20);
+  if(name.length<2||phone.replace(/\D/g,'').length<10){toast('اكتب اسمك ورقم موبايلك');return;}
+  const dur=Math.round(P.dur/15)*15;
+  const w=pubWindows(P.date).find(x=>P.start>=x.start&&P.start+dur<=x.end);
+  if(!w){toast('الميعاد ده اتحجز، اختار ميعاد تاني');render(true);return;}
+  const r={date:P.date,start:P.start,duration:dur,name:name,phone:phone,status:'awaiting',createdAt:Date.now()};
+  S.pubBusy=true;refreshSend();
+  try{
+    await db.collection('requests').add(r);
+    const price=listPrice(r.start,r.duration);
+    P.sent=Object.assign({},r,{price:price,dep:Math.ceil(price/2)});S.pubBusy=false;render(true);
+  }catch(e){S.pubBusy=false;refreshSend();toast('تعذر إرسال الطلب، حاول تاني');}
+}
+function pubAct(a,d){
+  const P=S.pub;if(!P)return;
+  if(a==='pubDay'){P.date=d.d;P.start=null;render(true);}
+  else if(a==='pubSubmit'){pubSubmit();}
+  else if(a==='pubAgain'){P.sent=null;P.start=null;render(true);}
+  else if(a==='pubDur'){P.dur=+d.d;render(true);}
+}
+function publicView(){
+  const P=S.pub,today=bizToday(),c=S.cfg;
+  if(P.sent)return sentView();
+  const days=[];for(let i=0;i<14;i++)days.push(addDays(today,i));
+  if(days.indexOf(P.date)<0)P.date=today;
+  const wins=pubWindows(P.date),starts=[];
+  wins.forEach(w=>{for(let t=Math.ceil(w.start/15)*15;t+30<=w.end;t+=15)starts.push(t);});
+  if(starts.indexOf(P.start)<0)P.start=starts.length?starts[0]:null;
+  let mx=0;
+  if(P.start!=null){const w=wins.find(x=>P.start>=x.start&&P.start<x.end);mx=w?w.end-P.start:0;if(P.dur>mx)P.dur=mx;if(P.dur<30)P.dur=Math.min(60,mx);}
+  const chips=days.map(k=>'<button class="chip" data-act="pubDay" data-d="'+k+'" aria-pressed="'+(k===P.date)+'">'+(k===today?'النهاردة':fmtDate(k,{weekday:'short',day:'numeric'}))+'</button>').join('');
+  const winsHtml=wins.length?wins.map(w=>'<div class="kv"><strong>'+fmtTime(w.start)+' إلى '+fmtTime(w.end)+'</strong><small>'+durLabel(w.end-w.start)+'</small></div>').join(''):'<p class="muted">مفيش مواعيد فاضية في اليوم ده. جرّب يوم تاني.</p>';
+  let form='';
+  if(P.start!=null&&mx>=30){
+    const price=listPrice(P.start,P.dur),dep=Math.ceil(price/2);
+    const presets=[30,60,90,120,180].filter(d=>d<=mx);
+    const pay=[];
+    if(c.wallet)pay.push('محفظة إلكترونية: <b dir="ltr">'+esc(c.wallet)+'</b>');
+    if(c.instapay)pay.push('إنستاباي: <b dir="ltr">'+esc(c.instapay)+'</b>');
+    form='<section class="card form"><h3>احجز الميعاد</h3>'
+      +'<div class="field"><label for="pb-start">يبدأ الساعة</label><select id="pb-start">'+starts.map(t=>'<option value="'+t+'"'+(t===P.start?' selected':'')+'>'+fmtTime(t)+'</option>').join('')+'</select></div>'
+      +'<div class="field"><label for="pb-dur">المدة بالدقائق</label><input id="pb-dur" type="number" inputmode="numeric" min="30" step="15" value="'+P.dur+'"><div class="chips">'+presets.map(d=>'<button type="button" class="chip" data-act="pubDur" data-d="'+d+'" aria-pressed="'+(d===P.dur)+'">'+durLabel(d)+'</button>').join('')+'</div><small>أقصى مدة من الميعاد ده: '+durLabel(mx)+'</small></div>'
+      +'<div class="kv"><span class="muted">السعر المتوقع</span><strong>'+money(price)+'</strong></div>'
+      +'<div class="kv"><span class="muted">العربون المطلوب (نصف السعر)</span><strong>'+money(dep)+'</strong></div>'
+      +'<small>السعر النهائي بيتحدد بعد اللعب حسب الوقت الفعلي.</small>'
+      +'<div class="two"><div class="field"><label for="pb-name">اسمك</label><input id="pb-name" autocomplete="name" value="'+esc(P.name)+'"></div>'
+      +'<div class="field"><label for="pb-phone">رقم موبايلك</label><input id="pb-phone" type="tel" inputmode="tel" autocomplete="tel" value="'+esc(P.phone)+'"></div></div>'
+      +(pay.length?'<div class="payinfo"><strong>إزاي تدفع العربون</strong><p>حوّل '+money(dep)+' على:</p>'+pay.map(x=>'<p>'+x+'</p>').join('')+'<p class="muted sm">بعد ما تبعت الطلب حوّل العربون وابعت لقطة التحويل على واتساب. الحجز مش بيتأكد إلا بعد ما صاحب الملعب يتأكد إن العربون وصل.</p></div>':'<p class="muted sm">طريقة دفع العربون هتتبعتلك على واتساب. الحجز مش بيتأكد إلا بعد ما صاحب الملعب يتأكد إن العربون وصل.</p>')
+      +'<button id="pb-send" class="btn primary" data-act="pubSubmit" disabled>إرسال طلب الحجز</button>'
+      +'<small>اكتب اسمك ورقم موبايلك عشان يتفعّل الزر.</small>'
+      +'</section>';
+  }
+  return '<header class="head"><span class="muted sm">حجز ميعاد</span><h1>'+esc(c.name)+'</h1></header>'
+    +'<div class="chips">'+chips+'</div>'
+    +'<section class="card"><h3>المواعيد الفاضية · '+dayLabel(P.date)+'</h3><div class="form" style="margin-top:8px">'+winsHtml+'</div></section>'
+    +form;
+}
+function parseReq(txt){
+  const m=/#bk\|(\d{4}-\d{2}-\d{2})\|(\d{1,4})\|(\d{1,3})\|([^|\n]*)\|([^|\n]*)/.exec(String(txt||''));
+  if(!m)return null;
+  const start=+m[2],dur=+m[3];
+  if(!(start>=0&&start<1800&&dur>=15&&dur<=600))return null;
+  return {date:m[1],start:start,duration:dur,name:m[4].trim()||'عميل',phone:m[5].trim()};
+}
+function reqCard(r){
+  const price=listPrice(r.start,r.duration),dep=Math.ceil(price/2);
+  const clash=S.bookings.some(x=>x.date===r.date&&isActive(x)&&x.start<r.start+r.duration&&x.start+x.duration>r.start);
+  const k1='rq-'+r.id,k2='rn-'+r.id;
+  return '<div class="card form"><div class="kv"><strong>'+esc(r.name)+'</strong><span class="muted" dir="ltr">'+esc(r.phone||'')+'</span></div>'
+    +'<div><strong>'+dayLabel(r.date)+'</strong><small>'+fmtTime(r.start)+' إلى '+fmtTime(r.start+r.duration)+' · '+durLabel(r.duration)+'</small></div>'
+    +'<div class="kv"><span class="muted">السعر المتوقع</span><strong>'+money(price)+'</strong></div>'
+    +'<div class="kv"><span class="muted">العربون المطلوب (النصف)</span><strong>'+money(dep)+'</strong></div>'
+    +(clash?'<p class="amt owe sm">الميعاد ده اتحجز لحد تاني، مينفعش تأكده.</p>':'')
+    +'<div class="two"><button class="btn primary" data-act="reqOk" data-id="'+esc(r.id)+'"'+(clash?' disabled':'')+'>'+(S.armed===k1?'اضغط تاني: العربون وصل':'تم دفع العربون')+'</button>'
+    +'<button class="btn danger" data-act="reqNo" data-id="'+esc(r.id)+'">'+(S.armed===k2?'اضغط تاني للرفض':'رفض الطلب')+'</button></div></div>';
+}
+function reqView(){
+  const link=S.cfg.baseUrl?String(S.cfg.baseUrl).split('#')[0]+'#book':'';
+  const wait=S.requests.filter(r=>r.status==='awaiting').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  const hist=S.requests.filter(r=>r.status!=='awaiting').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,15);
+  return '<section class="card form"><h3>رابط الحجز للعملاء</h3>'
+    +(link?'<div class="linkrow"><input id="linkbox" readonly value="'+esc(link)+'" aria-label="رابط الحجز"><button class="btn small" data-act="copyLink" data-link="'+esc(link)+'">نسخ</button></div>'
+      :'<p class="muted sm">رابط البرنامج مش متحدد.</p>')
+    +'<small>العميل بيشوف المواعيد الفاضية وبيبعت الطلب من الصفحة، والطلب بيظهرلك هنا لوحده. لما العربون يوصل بتدوس "تم دفع العربون" والحجز بيظهر في الجدول.</small></section>'
+    +'<div class="dayline"><h2>بانتظار العربون ('+wait.length+')</h2><button class="btn primary small" data-act="pasteReq">إضافة طلب من واتساب</button></div>'
+    +(wait.length?'<div class="list">'+wait.map(r=>reqCard(r)).join('')+'</div>':'<div class="empty">مفيش طلبات بانتظار العربون. الطلبات الجديدة بتظهر هنا تلقائي. ولو وصلك طلب على واتساب انسخ رسالته واضغط "إضافة طلب من واتساب".</div>')
+    +(hist.length?'<section class="card"><h3>آخر الطلبات</h3>'+hist.map(r=>'<div class="led"><div><strong>'+esc(r.name)+'</strong><small>'+shortDate(r.date)+' · '+fmtTime(r.start)+' · '+durLabel(r.duration)+'</small></div><div class="amt '+(r.status==='confirmed'?'credit':'owe')+'">'+(r.status==='confirmed'?'اتأكد':'اترفض')+'</div><div class="foot"><span></span><button class="btn small ghost" data-act="reqDel" data-id="'+esc(r.id)+'">حذف</button></div></div>').join('')+'</section>':'');
+}
+function pasteSheet(){
+  const p=openSheet('إضافة طلب من واتساب',
+    '<div class="form"><div class="field"><label for="rq-text">انسخ رسالة العميل والصقها هنا</label><textarea id="rq-text" rows="8" style="min-height:140px;padding:10px 12px"></textarea></div>'
+    +'<small>لازم الرسالة تكون فيها سطر "رمز الطلب" زي ما اتبعتت من صفحة الحجز.</small><button class="btn primary" id="rq-add">إضافة الطلب</button></div>');
+  $('#rq-add',p).addEventListener('click',async()=>{
+    const r=parseReq($('#rq-text',p).value);
+    if(!r){toast('مش لاقي رمز الطلب في الرسالة');return;}
+    if(S.requests.some(x=>x.status==='awaiting'&&x.date===r.date&&x.start===r.start&&x.phone===r.phone)){toast('الطلب ده مضاف قبل كده');return;}
+    try{await db.collection('requests').doc().set(Object.assign(r,{status:'awaiting',createdAt:Date.now()}));closeSheet();toast('اتضاف الطلب بانتظار العربون');}catch(e){toast('تعذر الحفظ');}
+  });
+}
+async function confirmReq(id){
+  const r=S.requests.find(x=>x.id===id);if(!r||r.status!=='awaiting')return;
+  if(S.bookings.some(x=>x.date===r.date&&isActive(x)&&x.start<r.start+r.duration&&x.start+x.duration>r.start)){toast('الميعاد ده اتحجز لحد تاني');return;}
+  const price=listPrice(r.start,r.duration),dep=Math.ceil(price/2),ph=String(r.phone||'').replace(/\D/g,'');
+  const found=ph.length>=10?S.customers.find(c=>String(c.phone||'').replace(/\D/g,'').slice(-10)===ph.slice(-10)):null;
+  try{
+    let cid=found?found.id:null;
+    if(!cid){const cr=db.collection('customers').doc();await cr.set({name:r.name,phone:r.phone,openingBalance:0,code:genCode(),createdAt:Date.now()});cid=cr.id;}
+    const br=db.collection('bookings').doc();
+    await br.set({date:r.date,start:r.start,duration:r.duration,customerId:cid,status:'booked',listPrice:price,price:price,note:'حجز أونلاين',source:'online',createdAt:Date.now()});
+    await db.collection('payments').doc().set({customerId:cid,bookingId:br.id,amount:dep,date:realToday(),note:'عربون (محفظة/إنستاباي)',createdAt:Date.now()});
+    await db.doc('requests/'+id).update({status:'confirmed',bookingId:br.id,confirmedAt:Date.now()});
+    toast('تم تأكيد الحجز وظهر في الجدول');
+  }catch(e){toast('تعذر التأكيد، حاول تاني');}
+}
+async function rejectReq(id){
+  try{await db.doc('requests/'+id).update({status:'rejected'});toast('تم رفض الطلب');}catch(e){toast('تعذر التعديل');}
+}
+
+/* ---------- revenue, expenses & staff custody ---------- */
+const EXP_CATS=['كهرباء','مياه','عمالة','صيانة','نظافة','أخرى'];
+function csel(p,sel){const e=$(sel,p);const v=e?e.value:'';S.lastStaff=v||null;return v||null;}
+function staffField(id){
+  if(!S.staff.length)return '';
+  return '<div class="field"><label for="'+id+'">استلم المبلغ</label><select id="'+id+'"><option value="">المدير مباشرة</option>'+S.staff.map(s=>'<option value="'+esc(s.id)+'"'+(S.lastStaff===s.id?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select></div>';
+}
+function staffName(id){const s=S.staff.find(x=>x.id===id);return s?s.name:'';}
+function revDay(k){
+  const pays=S.payments.filter(p=>p.date===k),exps=S.expenses.filter(e=>e.date===k);
+  const col=r2(pays.reduce((a,p)=>a+(+p.amount||0),0)),ex=r2(exps.reduce((a,e)=>a+(+e.amount||0),0));
+  return {pays:pays,exps:exps,col:col,ex:ex,net:r2(col-ex)};
+}
+function revMonthDays(ym){
+  const ks=new Set();
+  S.payments.forEach(p=>{if(p.date&&p.date.slice(0,7)===ym)ks.add(p.date);});
+  S.expenses.forEach(e=>{if(e.date&&e.date.slice(0,7)===ym)ks.add(e.date);});
+  return Array.from(ks).sort().reverse();
+}
+function staffBal(id){
+  const sum=a=>r2(a.reduce((t,x)=>t+(+x.amount||0),0));
+  const col=sum(S.payments.filter(p=>p.collectedBy===id));
+  const rec=sum(S.remits.filter(r=>r.staffId===id&&r.status==='received'));
+  const pend=sum(S.remits.filter(r=>r.staffId===id&&r.status==='pending'));
+  return {col:col,rec:rec,pend:pend,held:r2(col-rec)};
+}
+function revView(){
+  S.rmonth=S.rmonth||bizToday().slice(0,7);
+  const ym=S.rmonth.split('-').map(Number),first=new Date(ym[0],ym[1]-1,1,12);
+  const title=first.toLocaleDateString('ar-EG-u-nu-latn',{month:'long',year:'numeric'});
+  const days=revMonthDays(S.rmonth);
+  let tc=0,te=0;days.forEach(k=>{const x=revDay(k);tc+=x.col;te+=x.ex;});tc=r2(tc);te=r2(te);const tn=r2(tc-te);
+  const staffRows=S.staff.slice().sort((a,z)=>String(a.name||'').localeCompare(String(z.name||''),'ar')).map(s=>{
+    const b=staffBal(s.id);
+    return '<button class="row" data-act="staffOpen" data-id="'+esc(s.id)+'"><span><strong>'+esc(s.name)+'</strong><small>'+(b.pend>0?'توريد بانتظار الاستلام '+money(b.pend):'جمع '+money(b.col)+' · ورّد '+money(b.rec))+'</small></span><span class="pill '+(b.held>0?'owe':'even')+'">'+(b.held>0?'معاه '+money(b.held):'مفيش معاه')+'</span></button>';
+  }).join('');
+  const rows=days.map(k=>{
+    const x=revDay(k);
+    return '<button class="row" data-act="revDay" data-d="'+k+'"><span><strong>'+dayLabel(k)+'</strong><small>محصّل '+money(x.col)+' · مصاريف '+money(x.ex)+'</small></span><span class="pill '+(x.net<0?'owe':'credit')+'">صافي '+money(x.net)+'</span></button>';
+  }).join('');
+  return '<section class="card"><div class="dayline"><h3>الفلوس مع الموظفين</h3><button class="btn small ghost" data-act="newStaff">موظف جديد</button></div>'
+    +(S.staff.length?'<div class="list" style="margin-top:8px">'+staffRows+'</div>':'<p class="muted sm" style="margin-top:6px">ضيف الموظفين اللي بيستلموا فلوس من العملاء، وبعدين اختار الموظف وقت تسجيل أي دفعة.</p>')+'</section>'
+    +'<div class="datenav"><button class="btn ghost small" data-act="rmonth" data-m="-1">الشهر السابق</button><h2 style="text-align:center">'+title+'</h2><button class="btn ghost small" data-act="rmonth" data-m="1">الشهر التالي</button></div>'
+    +'<div class="summary"><div><small>المحصّل</small><b>'+money(tc)+'</b></div><div><small>المصاريف</small><b>'+money(te)+'</b></div><div><small>الصافي</small><b class="amt '+(tn<0?'owe':'credit')+'">'+money(tn)+'</b></div></div>'
+    +'<div class="dayline"><h2>أيام الشهر</h2><button class="btn primary small" data-act="newExpense">تسجيل مصروف</button></div>'
+    +(days.length?'<div class="list">'+rows+'</div>':'<div class="empty">مفيش إيرادات ولا مصاريف في الشهر ده.</div>')
+    +'<small>المحصّل هو الفلوس اللي اتدفعت فعلاً في اليوم ده (دفعات وعرابين). والصافي = المحصّل − مصاريف اليوم.</small>';
+}
+function daySheet(date){
+  const x=revDay(date),cm=new Map(S.customers.map(c=>[c.id,c]));
+  const played=S.bookings.filter(b=>b.date===date&&stOf(b)==='done');
+  const playedSum=r2(played.reduce((a,b)=>a+(+b.price||0),0));
+  const payRows=x.pays.map(py=>{const c=cm.get(py.customerId);return '<div class="led"><div><strong>'+esc(c?c.name:'عميل محذوف')+'</strong><small>'+(py.collectedBy?'استلمه: '+esc(staffName(py.collectedBy)||'موظف'):'استلمه المدير')+(py.note?' · '+esc(py.note):'')+'</small></div><div class="amt credit">'+money(py.amount)+'</div></div>';}).join('');
+  const expRows=x.exps.map(e=>'<div class="led"><div><strong>'+esc(e.cat||'مصروف')+'</strong><small>'+esc(e.note||'')+'</small></div><div class="amt owe">− '+money(e.amount)+'</div><div class="foot"><span></span><button class="btn small ghost ex-del" data-id="'+esc(e.id)+'">حذف</button></div></div>').join('');
+  const p=openSheet(dayLabel(date),
+    '<div class="summary"><div><small>المحصّل</small><b>'+money(x.col)+'</b></div><div><small>المصاريف</small><b>'+money(x.ex)+'</b></div><div><small>الصافي</small><b class="amt '+(x.net<0?'owe':'credit')+'">'+money(x.net)+'</b></div></div>'
+    +(played.length?'<small>حجوزات اتلعبت: '+played.length+' بقيمة '+money(playedSum)+' (المحسوب مش بالضرورة اتدفع)</small>':'')
+    +'<div><h3>الدفعات</h3>'+(payRows||'<p class="muted sm">مفيش دفعات في اليوم ده.</p>')+'</div>'
+    +'<div><h3>المصاريف</h3>'+(expRows||'<p class="muted sm">مفيش مصاريف في اليوم ده.</p>')+'</div>'
+    +'<button class="btn primary" id="dy-exp">تسجيل مصروف في اليوم ده</button>');
+  $('#dy-exp',p).addEventListener('click',()=>{closeSheet();expenseSheet(date);});
+  p.querySelectorAll('.ex-del').forEach(btn=>{
+    let a=false;
+    btn.addEventListener('click',async()=>{
+      if(!a){a=true;btn.textContent='اضغط تاني للتأكيد';return;}
+      try{await db.doc('expenses/'+btn.dataset.id).delete();closeSheet();toast('تم حذف المصروف');setTimeout(()=>daySheet(date),350);}catch(e){toast('تعذر الحذف');}
+    });
+  });
+}
+function expenseSheet(date){
+  const p=openSheet('تسجيل مصروف',
+    '<div class="form"><div class="field"><label for="ex-date">التاريخ</label><input id="ex-date" type="date" value="'+esc(date||bizToday())+'"></div>'
+    +'<div class="field"><label for="ex-cat">نوع المصروف</label><select id="ex-cat">'+EXP_CATS.map(c=>'<option>'+c+'</option>').join('')+'</select></div>'
+    +'<div class="field"><label for="ex-amt">المبلغ (ج)</label><input id="ex-amt" type="number" inputmode="decimal" min="0" step="any"></div>'
+    +'<div class="field"><label for="ex-note">ملاحظة (اختياري)</label><input id="ex-note"></div>'
+    +'<p class="muted sm">المصروف بيتخصم من إيراد اليوم اللي بتختاره.</p><button class="btn primary" id="ex-save">حفظ المصروف</button></div>');
+  $('#ex-save',p).addEventListener('click',async()=>{
+    const amt=parseFloat($('#ex-amt',p).value),dt=$('#ex-date',p).value;
+    if(!(amt>0)){toast('اكتب المبلغ');return;}
+    if(!dt){toast('اختار التاريخ');return;}
+    const btn=$('#ex-save',p);btn.disabled=true;
+    try{await db.collection('expenses').doc().set({date:dt,cat:$('#ex-cat',p).value,amount:amt,note:$('#ex-note',p).value.trim(),createdAt:Date.now()});closeSheet();toast('تم تسجيل المصروف');}
+    catch(e){btn.disabled=false;toast('تعذر الحفظ، حاول تاني');}
+  });
+}
+function staffNewSheet(){
+  const p=openSheet('موظف جديد',
+    '<div class="form"><div class="field"><label for="sf-name">اسم الموظف</label><input id="sf-name" autocomplete="off"></div><button class="btn primary" id="sf-save">حفظ</button></div>');
+  $('#sf-save',p).addEventListener('click',async()=>{
+    const nm=$('#sf-name',p).value.trim();if(!nm){toast('اكتب الاسم');return;}
+    try{await db.collection('staff').doc().set({name:nm,createdAt:Date.now()});closeSheet();toast('تمت إضافة الموظف');}catch(e){toast('تعذر الحفظ');}
+  });
+}
+function staffSheet(id){
+  const s=S.staff.find(x=>x.id===id);if(!s)return;
+  const b=staffBal(id),rem=S.remits.filter(r=>r.staffId===id).sort((a,z)=>(z.createdAt||0)-(a.createdAt||0)).slice(0,20);
+  const open=Math.max(0,r2(b.held-b.pend));
+  const p=openSheet(s.name,
+    '<div class="form"><div class="kv"><span class="muted">معاه دلوقتي</span><strong class="amt '+(b.held>0?'owe':'')+'">'+money(b.held)+'</strong></div>'
+    +'<div class="kv"><span class="muted">إجمالي اللي جمعه</span><strong>'+money(b.col)+'</strong></div>'
+    +'<div class="kv"><span class="muted">اللي اتورّد واتستلم</span><strong>'+money(b.rec)+'</strong></div>'
+    +(b.pend>0?'<div class="kv"><span class="muted">توريد بانتظار استلامك</span><strong>'+money(b.pend)+'</strong></div>':'')
+    +'<div class="card form"><h3>تسجيل توريد</h3><div class="field"><label for="rm-amt">المبلغ اللي ورّده (ج)</label><input id="rm-amt" type="number" inputmode="decimal" min="0" step="any" value="'+(open>0?open:'')+'"></div>'
+    +'<div class="field"><label for="rm-note">ملاحظة (اختياري)</label><input id="rm-note"></div>'
+    +'<small>التوريد بيفضل "بانتظار الاستلام" ومش بيتخصم من حساب الموظف غير لما تأكد إنك استلمت المبلغ.</small>'
+    +'<button class="btn primary" id="rm-add">تسجيل التوريد</button></div>'
+    +(rem.length?'<div><h3>التوريدات</h3>'+rem.map(r=>'<div class="led"><div><strong>'+money(r.amount)+'</strong><small>'+shortDate(r.date)+(r.note?' · '+esc(r.note):'')+'</small></div><div class="amt '+(r.status==='received'?'credit':'owe')+'">'+(r.status==='received'?'اتستلم':'بانتظار الاستلام')+'</div>'+(r.status==='pending'?'<div class="foot"><button class="btn small primary rm-ok" data-id="'+esc(r.id)+'">تم استلام المبلغ</button><button class="btn small ghost rm-no" data-id="'+esc(r.id)+'">إلغاء التوريد</button></div>':'')+'</div>').join('')+'</div>':'')
+    +'</div>');
+  const reopen=()=>{closeSheet();setTimeout(()=>staffSheet(id),350);};
+  $('#rm-add',p).addEventListener('click',async()=>{
+    const amt=parseFloat($('#rm-amt',p).value);
+    if(!(amt>0)){toast('اكتب المبلغ');return;}
+    if(amt>open){toast('المبلغ أكتر من اللي مع الموظف');return;}
+    try{await db.collection('remittances').doc().set({staffId:id,amount:amt,date:realToday(),note:$('#rm-note',p).value.trim(),status:'pending',createdAt:Date.now()});toast('اتسجل التوريد بانتظار الاستلام');reopen();}catch(e){toast('تعذر الحفظ');}
+  });
+  p.querySelectorAll('.rm-ok').forEach(btn=>{
+    let a=false;
+    btn.addEventListener('click',async()=>{
+      if(!a){a=true;btn.textContent='اضغط تاني: استلمت المبلغ فعلاً';return;}
+      try{await db.doc('remittances/'+btn.dataset.id).update({status:'received',receivedAt:Date.now()});toast('تم استلام المبلغ واتخصم من حساب الموظف');reopen();}catch(e){toast('تعذر التعديل');}
+    });
+  });
+  p.querySelectorAll('.rm-no').forEach(btn=>{
+    let a=false;
+    btn.addEventListener('click',async()=>{
+      if(!a){a=true;btn.textContent='اضغط تاني للإلغاء';return;}
+      try{await db.doc('remittances/'+btn.dataset.id).delete();toast('تم إلغاء التوريد');reopen();}catch(e){toast('تعذر الحذف');}
+    });
+  });
+}
+
+/* ---------- sheets ---------- */
+function closeSheet(){$('#sheet').innerHTML='';}
+function openSheet(title,body){
+  const r=$('#sheet');
+  r.innerHTML='<div class="ov"><div class="panel" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="ph"><h2>'+esc(title)+'</h2><button class="btn ghost small" data-act="closeSheet">إغلاق</button></div>'+body+'</div></div>';
+  const ov=$('.ov',r);ov.addEventListener('click',e=>{if(e.target===ov)closeSheet();});
+  return $('.panel',r);
+}
+
+function bookingSheet(preStart){
+  const date=S.date,o=S.cfg.open*60,c=S.cfg.close*60;
+  const day=()=>S.bookings.filter(b=>b.date===date&&isActive(b));
+  const maxDur=s=>{let lim=c;day().forEach(b=>{if(b.start>s&&b.start<lim)lim=b.start;});return lim-s;};
+  const free=[];for(let t=o;t+15<=c;t+=15){if(!day().some(b=>t>=b.start&&t<b.start+b.duration)&&maxDur(t)>=15)free.push(t);}
+  if(!free.length){toast('اليوم كله محجوز');return;}
+  let start=free.indexOf(preStart)>=0?preStart:free[0],dur=60;
+  
+  const allowed=()=>{const m=maxDur(start);return [30,60,90,120,150,180].filter(d=>d<=m);};
+  const custs=S.customers.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+  const p=openSheet('حجز جديد · '+dayLabel(date),
+    '<div class="form"><div class="field"><label for="bk-cust">العميل</label><select id="bk-cust"><option value="">اختر العميل</option>'
+    +custs.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('')+'<option value="__new">+ عميل جديد</option></select></div>'
+    +'<div id="bk-new" class="two" hidden><div class="field"><label for="bk-name">اسم العميل</label><input id="bk-name" autocomplete="off"></div>'
+    +'<div class="field"><label for="bk-phone">الموبايل (اختياري)</label><input id="bk-phone" type="tel" inputmode="tel"></div></div>'
+    +'<div class="field"><label for="bk-start">يبدأ الساعة</label><select id="bk-start">'+free.map(t=>'<option value="'+t+'">'+fmtTime(t)+'</option>').join('')+'</select></div>'
+    +'<div class="field"><label for="bk-dur">المدة بالدقائق (بتتقرّب لأقرب ربع ساعة)</label><input id="bk-dur" type="number" inputmode="numeric" min="15" step="15"><div id="bk-durs" class="chips"></div><small id="bk-max"></small></div>'
+    +'<div class="kv"><span class="muted">السعر المتوقع</span><strong id="bk-list"></strong></div><small id="bk-rates"></small>'
+    
+    
+    +'<div class="field"><label for="bk-paid">عربون مدفوع (اختياري)</label><input id="bk-paid" type="number" inputmode="decimal" min="0" step="any" placeholder="0"></div>'+staffField('bk-staff')+'<p class="muted sm">السعر النهائي بيتسجل بعد اللعب، لأنه بيزيد أو بيقل عن سعر الساعة.</p>'
+    +'<div class="field"><label for="bk-rep">تكرار الحجز</label><select id="bk-rep"><option value="0">حجز مرة واحدة</option><option value="1">ثابت كل '+fmtDate(date,{weekday:'long'})+' لمدة شهر</option><option value="2">ثابت لمدة شهرين</option><option value="3">ثابت لمدة 3 شهور</option><option value="6">ثابت لمدة 6 شهور</option><option value="12">ثابت لمدة سنة</option></select><small>الحجز الثابت بيتكرر كل أسبوع نفس اليوم ونفس الميعاد، وكل مرة بتسجلها تم أو إلغاء لوحدها.</small></div>'
+    +'<div class="field"><label for="bk-note">ملاحظة (اختياري)</label><input id="bk-note"></div>'
+    +'<p id="bk-end" class="muted sm"></p><button class="btn primary" id="bk-save">حفظ الحجز</button></div>');
+  const sel=$('#bk-cust',p),startSel=$('#bk-start',p),box=$('#bk-durs',p);
+  startSel.value=String(start);
+  let list=0;
+  function calc(){list=listPrice(start,dur);$('#bk-list',p).textContent=money(list);}
+  $('#bk-rates',p).textContent='نهاراً '+money(S.cfg.dayPrice)+' للساعة · من '+fmtTime(S.cfg.nightFrom*60)+' ليلاً '+money(S.cfg.nightPrice)+' للساعة';
+  if(!custs.length){sel.value='__new';$('#bk-new',p).hidden=false;}
+  function paint(){
+    const a=allowed();
+    const mx=maxDur(start);if(dur>mx)dur=mx;$('#bk-max',p).textContent='أقصى مدة متاحة من الميعاد ده: '+durLabel(mx);$('#bk-dur',p).value=String(dur);
+    box.innerHTML=a.map(d=>'<button type="button" class="chip" data-d="'+d+'" aria-pressed="'+(d===dur)+'">'+durLabel(d)+'</button>').join('');
+    calc();
+    $('#bk-end',p).textContent='ينتهي الساعة '+fmtTime(start+dur);
+  }
+  paint();
+  sel.addEventListener('change',()=>{$('#bk-new',p).hidden=sel.value!=='__new';});
+  startSel.addEventListener('change',()=>{start=+startSel.value;paint();});
+  box.addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(!b)return;dur=+b.dataset.d;paint();});
+  $('#bk-dur',p).addEventListener('change',()=>{const v=Math.round((parseFloat($('#bk-dur',p).value)||60)/15)*15;dur=Math.max(15,v);paint();});
+  
+  
+  $('#bk-save',p).addEventListener('click',async()=>{
+    const btn=$('#bk-save',p);let cid=sel.value,name='',phone='';
+    if(cid==='__new'){name=$('#bk-name',p).value.trim();phone=$('#bk-phone',p).value.trim();if(!name){toast('اكتب اسم العميل');return;}}
+    else if(!cid){toast('اختر العميل');return;}
+    
+    const paid=parseFloat($('#bk-paid',p).value)||0;if(paid<0){toast('المبلغ المدفوع غير صحيح');return;}
+    if(maxDur(start)<dur){toast('الموعد ده بيتعارض مع حجز تاني');return;}
+    btn.disabled=true;
+    try{
+      if(cid==='__new'){const cr=db.collection('customers').doc();await cr.set({name:name,phone:phone,code:genCode(),createdAt:Date.now()});cid=cr.id;}
+      const br=db.collection('bookings').doc();
+      const months=+$('#bk-rep',p).value||0,sid=months?genCode():null,bnote=$('#bk-note',p).value.trim();
+      const base={start:start,duration:dur,customerId:cid,status:'booked',listPrice:list,price:list,note:bnote,createdAt:Date.now()};
+      if(sid)base.seriesId=sid;
+      await br.set(Object.assign({date:date},base));
+      let made=1,skipped=0;
+      if(months){
+        const ed=parseKey(date);ed.setMonth(ed.getMonth()+months);const endKey=ymd(ed),more=[];
+        for(let d=addDays(date,7);d<=endKey;d=addDays(d,7)){
+          if(S.bookings.some(x=>x.date===d&&isActive(x)&&x.start<start+dur&&x.start+x.duration>start))skipped++;else more.push(d);
+        }
+        for(let i=0;i<more.length;i+=10)await Promise.all(more.slice(i,i+10).map(d=>db.collection('bookings').doc().set(Object.assign({date:d},base))));
+        made+=more.length;
+      }
+      if(paid>0)await db.collection('payments').doc().set({customerId:cid,bookingId:br.id,collectedBy:csel(p,'#bk-staff'),amount:paid,date:realToday(),note:'عربون',createdAt:Date.now()});
+      closeSheet();toast(made>1?'تم حجز '+made+' ميعاد'+(skipped?' وتخطّينا '+skipped+' محجوزين قبل كده':''):'تم حجز الموعد');
+    }catch(e){btn.disabled=false;toast('تعذر الحفظ، حاول تاني');}
+  });
+}
+
+function bookingDetail(id){
+  const b=S.bookings.find(x=>x.id===id);if(!b)return;
+  if(stOf(b)==='booked'){pendingSheet(b);return;}
+  if(stOf(b)==='cancelled'){cancelledSheet(b);return;}
+  const c=S.customers.find(x=>x.id===b.customerId),bal=balOf(balances(),b.customerId);
+  const p=openSheet('تفاصيل الحجز',
+    '<div class="form"><div class="kv"><span class="muted">العميل</span><strong>'+esc(c?c.name:'—')+'</strong></div>'
+    +'<div class="kv"><span class="muted">اليوم</span><strong>'+dayLabel(b.date)+'</strong></div>'
+    +'<div class="kv"><span class="muted">الوقت</span><strong>'+fmtTime(b.start)+' إلى '+fmtTime(b.start+b.duration)+' ('+durLabel(b.duration)+')</strong></div>'
+    +'<div class="kv"><span class="muted">حساب العميل</span>'+pill(bal.net,false)+'</div>'+(+b.discount>0?'<div class="kv"><span class="muted">الخصم</span><strong>'+money(b.discount)+'</strong></div>':'')
+    +'<div class="two"><div class="field"><label for="bd-price">المبلغ المحسوب (ج)</label><input id="bd-price" type="number" inputmode="decimal" min="0" step="any" value="'+esc(b.price)+'"></div>'
+    +'<div class="field"><label for="bd-note">ملاحظة</label><input id="bd-note" value="'+esc(b.note||'')+'"></div></div>'
+    +'<button class="btn primary" id="bd-save">حفظ التعديل</button>'
+    +'<div class="two"><button class="btn" id="bd-pay">تسجيل دفعة</button><button class="btn" id="bd-cust">حساب العميل</button></div>'
+    +'<button class="btn" id="bd-undo">رجوع لمحجوز (تصحيح خطأ)</button><button class="btn danger" id="bd-del">حذف الحجز</button></div>');
+  $('#bd-save',p).addEventListener('click',async()=>{
+    const price=parseFloat($('#bd-price',p).value);if(!(price>=0)){toast('اكتب السعر');return;}
+    try{await db.doc('bookings/'+id).update({price:price,discount:Math.max(0,r2((+b.listPrice||price)-price)),note:$('#bd-note',p).value.trim()});closeSheet();toast('تم الحفظ');}catch(e){toast('تعذر الحفظ');}
+  });
+  $('#bd-pay',p).addEventListener('click',()=>{closeSheet();paymentSheet(b.customerId,id);});
+  $('#bd-cust',p).addEventListener('click',()=>{closeSheet();S.tab='customers';S.cid=b.customerId;render(true);});
+  $('#bd-undo',p).addEventListener('click',async()=>{try{await db.doc('bookings/'+id).update({status:'booked'});closeSheet();toast('رجع الحجز لمحجوز');}catch(e){toast('تعذر التعديل');}});
+  const del=$('#bd-del',p);let armed=false;
+  del.addEventListener('click',async()=>{
+    if(!armed){armed=true;del.textContent='اضغط مرة تانية للتأكيد (الدفعات بتفضل في حسابه)';return;}
+    try{await db.doc('bookings/'+id).delete();closeSheet();toast('تم حذف الحجز');}catch(e){toast('تعذر الحذف');}
+  });
+}
+
+function pendingSheet(b){
+  const id=b.id,c=S.customers.find(x=>x.id===b.customerId),bal=balOf(balances(),b.customerId);
+  const dep=S.payments.filter(x=>x.bookingId===id).reduce((a,x)=>a+(+x.amount||0),0);
+  const p=openSheet('حجز بانتظار اللعب',
+    '<div class="form"><div class="kv"><span class="muted">العميل</span><strong>'+esc(c?c.name:'—')+'</strong></div>'
+    +'<div class="kv"><span class="muted">اليوم</span><strong>'+dayLabel(b.date)+'</strong></div>'
+    +'<div class="kv"><span class="muted">الوقت</span><strong>'+fmtTime(b.start)+' إلى '+fmtTime(b.start+b.duration)+' ('+durLabel(b.duration)+')</strong></div>'
+    +'<div class="kv"><span class="muted">السعر المتوقع</span><strong>'+money(b.listPrice||0)+'</strong></div>'
+    +(dep>0?'<div class="kv"><span class="muted">عربون مدفوع</span><strong>'+money(dep)+'</strong></div>':'')
+    +'<div class="kv"><span class="muted">حساب العميل</span>'+pill(bal.net,false)+'</div>'
+    +'<button class="btn primary" id="bp-done">تم اللعب</button>'
+    +'<button class="btn" id="bp-cancel">إلغاء الحجز</button>'
+    +'<div class="field"><label for="bp-note">ملاحظة</label><input id="bp-note" value="'+esc(b.note||'')+'"></div>'
+    +'<div class="two"><button class="btn ghost" id="bp-save">حفظ الملاحظة</button><button class="btn ghost" id="bp-cust">حساب العميل</button></div>'
+    +(b.seriesId?'<button class="btn" id="bp-series">حذف باقي الحجوزات الثابتة من هذا اليوم</button>':'')
+    +'<button class="btn danger" id="bp-del">حذف الحجز</button></div>');
+  $('#bp-done',p).addEventListener('click',()=>{closeSheet();completeSheet(id);});
+  $('#bp-cancel',p).addEventListener('click',()=>{closeSheet();cancelSheet(id);});
+  $('#bp-save',p).addEventListener('click',async()=>{try{await db.doc('bookings/'+id).update({note:$('#bp-note',p).value.trim()});closeSheet();toast('تم الحفظ');}catch(e){toast('تعذر الحفظ');}});
+  $('#bp-cust',p).addEventListener('click',()=>{closeSheet();S.tab='customers';S.cid=b.customerId;render(true);});
+  const sb=$('#bp-series',p);
+  if(sb){let a2=false;sb.addEventListener('click',async()=>{
+    if(!a2){a2=true;sb.textContent='اضغط مرة تانية للتأكيد';return;}
+    const ids=S.bookings.filter(x=>x.seriesId===b.seriesId&&stOf(x)==='booked'&&x.date>=b.date).map(x=>x.id);
+    try{for(let i=0;i<ids.length;i+=10)await Promise.all(ids.slice(i,i+10).map(x=>db.doc('bookings/'+x).delete()));closeSheet();toast('تم حذف '+ids.length+' حجز');}catch(e){toast('تعذر الحذف');}
+  });}
+  const del=$('#bp-del',p);let armed=false;
+  del.addEventListener('click',async()=>{
+    if(!armed){armed=true;del.textContent='اضغط مرة تانية للتأكيد';return;}
+    try{await db.doc('bookings/'+id).delete();closeSheet();toast('تم حذف الحجز');}catch(e){toast('تعذر الحذف');}
+  });
+}
+
+function completeSheet(id){
+  const bk=S.bookings.find(x=>x.id===id);if(!bk)return;
+  const c=S.customers.find(x=>x.id===bk.customerId);if(!c)return;
+  const net0=balOf(balances(),c.id).net,list=+bk.listPrice||listPrice(bk.start,bk.duration);
+  const dep=S.payments.filter(x=>x.bookingId===id).reduce((a,x)=>a+(+x.amount||0),0);
+  const p=openSheet('تسجيل اللعب · تم',
+    '<div class="form"><div class="kv"><span class="muted">العميل</span><strong>'+esc(c.name)+'</strong></div>'
+    +'<div class="kv"><span class="muted">'+dayLabel(bk.date)+'</span><strong>'+fmtTime(bk.start)+' · '+durLabel(bk.duration)+'</strong></div>'
+    +'<div class="kv"><span class="muted">السعر حسب سعر الساعة</span><strong>'+money(list)+'</strong></div>'
+    +(dep>0?'<div class="kv"><span class="muted">عربون مدفوع قبل كده</span><strong>'+money(dep)+'</strong></div>':'')
+    +'<div class="two"><div class="field"><label for="cp-disc">خصم (اختياري)</label><input id="cp-disc" type="number" inputmode="decimal" min="0" step="any"></div>'
+    +'<div class="field"><label for="cp-dunit">نوع الخصم</label><select id="cp-dunit"><option value="amt">جنيه</option><option value="pct">نسبة %</option></select></div></div>'
+    +'<div class="field"><label for="cp-price">المبلغ المحسوب فعلياً (ج)</label><input id="cp-price" type="number" inputmode="decimal" min="0" step="any"><small>اكتب اللي اتحسب بعد اللعب، سواء زاد أو قل عن السعر المتوقع.</small></div>'
+    +'<div class="field"><label for="cp-paid">'+(dep>0?'مدفوع دلوقتي (بخلاف العربون)':'المبلغ المدفوع (ج)')+'</label><input id="cp-paid" type="number" inputmode="decimal" min="0" step="any" placeholder="0"></div>'
+    +staffField('cp-staff')
+    +'<div class="chips"><button type="button" class="chip" id="cp-all">دفع كل المبلغ</button></div>'
+    +'<div class="kv"><span class="muted">حساب العميل بعد التسجيل</span><strong id="cp-after"></strong></div>'
+    +'<button class="btn primary" id="cp-save">تأكيد: الحجز تم</button></div>');
+  const discI=$('#cp-disc',p),unitS=$('#cp-dunit',p),priceI=$('#cp-price',p),paidI=$('#cp-paid',p);
+  const after=()=>{const pr=parseFloat(priceI.value)||0,pd=parseFloat(paidI.value)||0;$('#cp-after',p).textContent=runText(r2(net0-pr+pd));};
+  const calc=()=>{const dv=parseFloat(discI.value)||0;const da=unitS.value==='pct'?list*dv/100:dv;priceI.value=String(r2(Math.max(0,list-da)));after();};
+  priceI.value=String(list);after();
+  priceI.addEventListener('input',()=>{const v=parseFloat(priceI.value);if(v>=0){const x=r2(list-v);discI.value=x>0?String(x):'';unitS.value='amt';}after();});
+  discI.addEventListener('input',calc);unitS.addEventListener('change',calc);paidI.addEventListener('input',after);
+  $('#cp-all',p).addEventListener('click',()=>{const pr=parseFloat(priceI.value)||0;paidI.value=String(Math.max(0,r2(pr-dep)));after();});
+  $('#cp-save',p).addEventListener('click',async()=>{
+    const price=parseFloat(priceI.value);if(!(price>=0)){toast('اكتب المبلغ المحسوب');return;}
+    const paid=parseFloat(paidI.value)||0;if(paid<0){toast('المبلغ المدفوع غير صحيح');return;}
+    const btn=$('#cp-save',p);btn.disabled=true;
+    try{
+      await db.doc('bookings/'+id).update({status:'done',price:price,listPrice:list,discount:Math.max(0,r2(list-price)),doneAt:Date.now()});
+      if(paid>0)await db.collection('payments').doc().set({customerId:c.id,bookingId:id,collectedBy:csel(p,'#cp-staff'),amount:paid,date:realToday(),note:'دفعة بعد اللعب',createdAt:Date.now()});
+      closeSheet();toast('تم تسجيل الحجز');
+    }catch(e){btn.disabled=false;toast('تعذر الحفظ، حاول تاني');}
+  });
+}
+
+function cancelSheet(id){
+  const bk=S.bookings.find(x=>x.id===id);if(!bk)return;
+  const c=S.customers.find(x=>x.id===bk.customerId);if(!c)return;
+  const list=+bk.listPrice||listPrice(bk.start,bk.duration);
+  let conv=bk.cancelOk!==false;
+  const p=openSheet('إلغاء الحجز',
+    '<div class="form"><div class="kv"><span class="muted">العميل</span><strong>'+esc(c.name)+'</strong></div>'
+    +'<div class="kv"><span class="muted">'+dayLabel(bk.date)+'</span><strong>'+fmtTime(bk.start)+' · '+durLabel(bk.duration)+'</strong></div>'
+    +'<div class="field"><label for="cx-reason">سبب الإلغاء</label><input id="cx-reason" autocomplete="off" value="'+esc(bk.cancelReason||'')+'"></div>'
+    +'<div class="field"><label>السبب مقنع؟</label><div class="chips"><button type="button" class="chip" id="cx-yes">مقنع، من غير حساب</button><button type="button" class="chip" id="cx-no">مش مقنع، يتحسب على العميل</button></div></div>'
+    +'<div class="field" id="cx-amtbox"><label for="cx-amt">المبلغ اللي يتحسب على العميل (ج)</label><input id="cx-amt" type="number" inputmode="decimal" min="0" step="any" value="'+esc(bk.charged?bk.price:list)+'"><small>مبدئياً السعر المتوقع، وتقدر تغيّره. بيتضاف على حساب العميل.</small></div>'
+    +'<button class="btn primary" id="cx-save">تأكيد الإلغاء</button></div>');
+  const yes=$('#cx-yes',p),no=$('#cx-no',p),box=$('#cx-amtbox',p);
+  const paint=()=>{yes.setAttribute('aria-pressed',String(conv));no.setAttribute('aria-pressed',String(!conv));box.hidden=conv;};
+  yes.addEventListener('click',()=>{conv=true;paint();});no.addEventListener('click',()=>{conv=false;paint();});paint();
+  $('#cx-save',p).addEventListener('click',async()=>{
+    const reason=$('#cx-reason',p).value.trim();if(!reason){toast('اكتب سبب الإلغاء');return;}
+    const amt=parseFloat($('#cx-amt',p).value);if(!conv&&!(amt>=0)){toast('اكتب المبلغ اللي يتحسب');return;}
+    const btn=$('#cx-save',p);btn.disabled=true;
+    try{await db.doc('bookings/'+id).update({status:'cancelled',cancelReason:reason,cancelOk:conv,charged:!conv,price:conv?0:amt,listPrice:list,cancelledAt:Date.now()});closeSheet();toast(conv?'تم إلغاء الحجز':'تم الإلغاء وإضافة المبلغ على حساب العميل');}
+    catch(e){btn.disabled=false;toast('تعذر الحفظ، حاول تاني');}
+  });
+}
+
+function cancelledSheet(b){
+  const id=b.id,c=S.customers.find(x=>x.id===b.customerId);
+  const p=openSheet('حجز ملغي',
+    '<div class="form"><div class="kv"><span class="muted">العميل</span><strong>'+esc(c?c.name:'—')+'</strong></div>'
+    +'<div class="kv"><span class="muted">اليوم</span><strong>'+dayLabel(b.date)+'</strong></div>'
+    +'<div class="kv"><span class="muted">الوقت</span><strong>'+fmtTime(b.start)+' إلى '+fmtTime(b.start+b.duration)+' ('+durLabel(b.duration)+')</strong></div>'
+    +'<div class="kv"><span class="muted">سبب الإلغاء</span><strong>'+esc(b.cancelReason||'—')+'</strong></div>'
+    +'<div class="kv"><span class="muted">الحساب</span>'+(b.charged?'<span class="pill owe">اتحسب '+money(b.price)+' على العميل</span>':'<span class="pill even">بدون حساب</span>')+'</div>'
+    +'<button class="btn" id="bc-edit">تعديل الإلغاء</button>'
+    +'<div class="two"><button class="btn ghost" id="bc-undo">رجوع لمحجوز</button><button class="btn ghost" id="bc-cust">حساب العميل</button></div>'
+    +'<button class="btn danger" id="bc-del">حذف الحجز</button></div>');
+  $('#bc-edit',p).addEventListener('click',()=>{closeSheet();cancelSheet(id);});
+  $('#bc-cust',p).addEventListener('click',()=>{closeSheet();S.tab='customers';S.cid=b.customerId;render(true);});
+  $('#bc-undo',p).addEventListener('click',async()=>{
+    if(S.bookings.some(x=>x.id!==id&&x.date===b.date&&isActive(x)&&x.start<b.start+b.duration&&x.start+x.duration>b.start)){toast('الميعاد ده اتحجز لحد تاني');return;}
+    try{await db.doc('bookings/'+id).update({status:'booked',charged:false,price:+b.listPrice||0});closeSheet();toast('رجع الحجز لمحجوز');}catch(e){toast('تعذر التعديل');}
+  });
+  const del=$('#bc-del',p);let armed=false;
+  del.addEventListener('click',async()=>{
+    if(!armed){armed=true;del.textContent='اضغط مرة تانية للتأكيد';return;}
+    try{await db.doc('bookings/'+id).delete();closeSheet();toast('تم حذف الحجز');}catch(e){toast('تعذر الحذف');}
+  });
+}
+
+function paymentSheet(cid,bid){
+  const c=S.customers.find(x=>x.id===cid);if(!c)return;
+  const bal=balOf(balances(),cid);
+  const p=openSheet('تسجيل دفعة',
+    '<div class="form"><div class="kv"><span class="muted">العميل</span><strong>'+esc(c.name)+'</strong></div>'
+    +'<div class="kv"><span class="muted">الحساب الآن</span>'+pill(bal.net,false)+'</div>'
+    +'<div class="field"><label for="pm-amt">المبلغ المدفوع (ج)</label><input id="pm-amt" type="number" inputmode="decimal" min="0" step="any"></div>'
+    +(bal.net<0?'<div class="chips"><button type="button" class="chip" id="pm-rest">سدّد المتبقي '+money(-bal.net)+'</button></div>':'')
+    +staffField('pm-staff')
+    +'<div class="two"><div class="field"><label for="pm-date">التاريخ</label><input id="pm-date" type="date" value="'+realToday()+'"></div>'
+    +'<div class="field"><label for="pm-note">ملاحظة</label><input id="pm-note"></div></div>'
+    +'<p class="muted sm">لو دفع أكتر من المطلوب، الزيادة بتظهر في حسابه كمبلغ "له".</p>'
+    +'<button class="btn primary" id="pm-save">حفظ الدفعة</button></div>');
+  const amt=$('#pm-amt',p);const rest=$('#pm-rest',p);
+  if(rest)rest.addEventListener('click',()=>{amt.value=String(-bal.net);});
+  $('#pm-save',p).addEventListener('click',async()=>{
+    const a=parseFloat(amt.value);if(!(a>0)){toast('اكتب المبلغ');return;}
+    const d=$('#pm-date',p).value||realToday();
+    const btn=$('#pm-save',p);btn.disabled=true;
+    try{await db.collection('payments').doc().set({customerId:cid,bookingId:bid||null,collectedBy:csel(p,'#pm-staff'),amount:a,date:d,note:$('#pm-note',p).value.trim(),createdAt:Date.now()});closeSheet();toast('تم تسجيل الدفعة');}
+    catch(e){btn.disabled=false;toast('تعذر الحفظ، حاول تاني');}
+  });
+}
+
+function customerSheet(id){
+  const c=id?S.customers.find(x=>x.id===id):null;
+  const ob0=c?(+c.openingBalance||0):0;
+  const p=openSheet(c?'تعديل بيانات العميل':'عميل جديد',
+    '<div class="form"><div class="field"><label for="cu-name">الاسم</label><input id="cu-name" autocomplete="off" value="'+esc(c?c.name:'')+'"></div>'
+    +'<div class="field"><label for="cu-phone">الموبايل (اختياري)</label><input id="cu-phone" type="tel" inputmode="tel" value="'+esc(c?c.phone||'':'')+'"></div>'
+    +'<div class="two"><div class="field"><label for="cu-open">رصيد سابق (قبل بدء البرنامج)</label><input id="cu-open" type="number" inputmode="decimal" min="0" step="any" value="'+(ob0?Math.abs(ob0):'')+'"></div>'
+    +'<div class="field"><label for="cu-dir">نوع الرصيد</label><select id="cu-dir"><option value="owe"'+(ob0<=0?' selected':'')+'>عليه (مديون)</option><option value="credit"'+(ob0>0?' selected':'')+'>له (دفع مقدم)</option></select></div></div>'
+    +'<button class="btn primary" id="cu-save">حفظ</button></div>');
+  $('#cu-save',p).addEventListener('click',async()=>{
+    const name=$('#cu-name',p).value.trim(),phone=$('#cu-phone',p).value.trim();
+    const ob=r2(($('#cu-dir',p).value==='credit'?1:-1)*Math.abs(parseFloat($('#cu-open',p).value)||0));
+    if(!name){toast('اكتب اسم العميل');return;}
+    try{
+      if(c){await db.doc('customers/'+c.id).update({name:name,phone:phone,openingBalance:ob});}
+      else{const r=db.collection('customers').doc();await r.set({name:name,phone:phone,openingBalance:ob,code:genCode(),createdAt:Date.now()});}
+      closeSheet();toast('تم الحفظ');
+    }catch(e){toast('تعذر الحفظ');}
+  });
+}
+
+async function saveSettings(){
+  const open=+$('#st-open').value,close=+$('#st-close').value,dayP=parseFloat($('#st-day').value),nightP=parseFloat($('#st-night').value),nf=+$('#st-nf').value;
+  if(close<=open){toast('نهاية الحجز لازم تكون بعد البداية');return;}
+  if(!(dayP>=0)||!(nightP>=0)){toast('اكتب سعر الساعة نهاراً وليلاً');return;}
+  const cfg={name:$('#st-name').value.trim()||DEF.name,open:open,close:close,dayPrice:dayP,nightPrice:nightP,nightFrom:nf,waPhone:$('#st-wa').value.trim(),wallet:$('#st-wallet').value.trim(),instapay:$('#st-insta').value.trim(),baseUrl:$('#st-url').value.trim()};
+  try{await db.doc('settings/main').set(cfg);toast('تم حفظ الإعدادات');}catch(e){toast('تعذر الحفظ');}
+}
+
+async function copyText(txt){
+  try{await navigator.clipboard.writeText(txt);toast('تم نسخ الرابط');}
+  catch(e){const i=$('#linkbox');if(i){i.focus();i.select();}toast('حدد الرابط وانسخه يدوياً');}
+}
+function twoStep(key,fn){
+  if(S.armed!==key){S.armed=key;render(true);clearTimeout(armDel.t);armDel.t=setTimeout(()=>{S.armed=null;render(true);},4000);return;}
+  S.armed=null;clearTimeout(armDel.t);render(true);fn();
+}
+function armDel(key,kind,id){
+  if(S.armed!==key){S.armed=key;render(true);clearTimeout(armDel.t);armDel.t=setTimeout(()=>{S.armed=null;render(true);},4000);return;}
+  S.armed=null;
+  db.doc((kind==='p'?'payments/':'bookings/')+id).delete().then(()=>toast('تم الحذف'),()=>toast('تعذر الحذف'));
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const a=el.dataset.act,d=el.dataset;
+  if(a==='closeSheet'){closeSheet();return;}
+  if(a==='login'){doLogin();return;}
+  if(a==='logout'){if(auth)auth.signOut();return;}
+  if(S.mode==='public'){pubAct(a,d);return;}
+  if(S.mode!=='owner'||!S.canWrite)return;
+  if(a==='tab'){if(d.t==='day'&&S.tab==='day')S.dayOpen=false;S.tab=d.t;S.cid=null;render(true);}
+  else if(a==='shift'){S.date=addDays(S.date,+d.d);S.month=S.date.slice(0,7);render(true);}
+  else if(a==='openDay'){S.date=d.d;S.month=d.d.slice(0,7);S.dayOpen=true;render(true);}
+  else if(a==='closeDay'){S.dayOpen=false;S.month=S.date.slice(0,7);render(true);}
+  else if(a==='month'){const p=(S.month||bizToday().slice(0,7)).split('-').map(Number);const n=new Date(p[0],p[1]-1+(+d.m),1,12);S.month=n.getFullYear()+'-'+pad(n.getMonth()+1);render(true);}
+  else if(a==='goToday'){S.date=bizToday();render(true);}
+  else if(a==='newBooking'){bookingSheet(d.start!=null&&d.start!==''?+d.start:null);}
+  else if(a==='openBooking'){bookingDetail(d.id);}
+  else if(a==='openCustomer'){S.cid=d.id;render(true);}
+  else if(a==='back'){S.cid=null;render(true);}
+  else if(a==='filter'){S.filter=d.f;render(true);}
+  else if(a==='addCustomer'){customerSheet();}
+  else if(a==='editCustomer'){customerSheet(d.id);}
+  else if(a==='pay'){paymentSheet(d.id,null);}
+  else if(a==='copyLink'){copyText(d.link);}
+  else if(a==='saveSettings'){saveSettings();}
+  else if(a==='importData'){doImport();}
+  else if(a==='del'){armDel(d.key,d.kind,d.id);}
+  else if(a==='rmonth'){const q=(S.rmonth||bizToday().slice(0,7)).split('-').map(Number);const n=new Date(q[0],q[1]-1+(+d.m),1,12);S.rmonth=n.getFullYear()+'-'+pad(n.getMonth()+1);render(true);}
+  else if(a==='revDay'){daySheet(d.d);}
+  else if(a==='newExpense'){expenseSheet(null);}
+  else if(a==='newStaff'){staffNewSheet();}
+  else if(a==='staffOpen'){staffSheet(d.id);}
+  else if(a==='pasteReq'){pasteSheet();}
+  else if(a==='reqOk'){twoStep('rq-'+d.id,()=>confirmReq(d.id));}
+  else if(a==='reqNo'){twoStep('rn-'+d.id,()=>rejectReq(d.id));}
+  else if(a==='reqDel'){db.doc('requests/'+d.id).delete().then(()=>toast('تم الحذف'),()=>toast('تعذر الحذف'));}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='im-file'){S.importFile=(e.target.files&&e.target.files[0])||null;return;}
+  if(e.target.id==='datePick'&&e.target.value){S.date=e.target.value;render(true);}
+  else if(S.mode==='public'&&S.pub){
+    const P=S.pub;
+    if(e.target.id==='pb-start'){P.start=+e.target.value;render(true);}
+    else if(e.target.id==='pb-dur'){const v=Math.round((parseFloat(e.target.value)||60)/15)*15;P.dur=Math.max(30,v);render(true);}
+  }
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='lg-email'){S.lgEmail=e.target.value;return;}
+  if(S.mode!=='public'||!S.pub)return;
+  if(e.target.id==='pb-name'){S.pub.name=e.target.value;refreshSend();}
+  else if(e.target.id==='pb-phone'){S.pub.phone=e.target.value;refreshSend();}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.key==='Enter'&&e.target&&(e.target.id==='lg-pass'||e.target.id==='lg-email')){e.preventDefault();doLogin();}});
+
+/* ---------- data (Firebase) ---------- */
+const onErr=e=>{S.err=e&&e.code;render(true);};
+function sub(q,key){unsubs.push(q.onSnapshot(snap=>{S[key]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));S.loaded[key]=true;render();if(S.mode==='owner')scheduleSync();},onErr));}
+function subCfg(){unsubs.push(db.doc('settings/main').onSnapshot(s=>{S.cfg=normCfg(s.exists?s.data():{});S.loaded.cfg=true;render();},onErr));}
+
+let auth=null,authUser,authResolve;
+const authReady=new Promise(r=>{authResolve=r;});
+const cfgMissing=!FIREBASE_CONFIG.apiKey||/^PASTE/.test(FIREBASE_CONFIG.apiKey);
+if(typeof firebase!=='undefined'&&!cfgMissing){
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db=firebase.firestore();auth=firebase.auth();
+  auth.onAuthStateChanged(u=>{
+    const first=authUser===undefined;authUser=u||null;
+    if(first)authResolve();
+    else if(S.mode==='owner'||S.mode==='boot')start();
+  });
+}
+
+function authMsg(e){
+  const c=e&&e.code||'';
+  if(/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c))return 'الإيميل أو كلمة السر غلط';
+  if(/too-many-requests/.test(c))return 'محاولات كتير، استنى شوية وجرّب تاني';
+  if(/network/.test(c))return 'اتأكد إن النت شغال';
+  return 'تعذر الدخول';
+}
+async function doLogin(){
+  if(!auth||S.loginBusy)return;
+  const em=(($('#lg-email')||{}).value||S.lgEmail||'').trim(),pw=($('#lg-pass')||{}).value||'';
+  S.lgEmail=em;
+  if(!em||!pw){S.loginErr='اكتب الإيميل وكلمة السر';render(true);return;}
+  S.loginBusy=true;S.loginErr='';render(true);
+  try{await auth.signInWithEmailAndPassword(em,pw);}catch(e){S.loginErr=authMsg(e);}
+  S.loginBusy=false;render(true);
+}
+function loginView(){
+  return '<header class="head"><span class="muted sm">دخول المدير</span><h1>'+esc(S.cfg.name)+'</h1></header>'
+    +'<section class="card form"><div class="field"><label for="lg-email">الإيميل</label><input id="lg-email" type="email" dir="ltr" autocomplete="username" value="'+esc(S.lgEmail||'')+'"></div>'
+    +'<div class="field"><label for="lg-pass">كلمة السر</label><input id="lg-pass" type="password" dir="ltr" autocomplete="current-password"></div>'
+    +(S.loginErr?'<p class="amt owe sm">'+esc(S.loginErr)+'</p>':'')
+    +'<button class="btn primary" data-act="login"'+(S.loginBusy?' disabled':'')+'>'+(S.loginBusy?'جاري الدخول...':'دخول')+'</button></section>';
+}
+function noAccessView(){
+  return '<div class="card form"><h2>الحساب ده مش مضاف كمدير</h2><p class="muted" style="margin-top:6px">الإيميل <b dir="ltr">'+esc(authUser&&authUser.email||'')+'</b> مش موجود في team على Firebase. أضفه من الـConsole (الخطوات في README) أو سجّل خروج وادخل بحساب تاني.</p>'
+    +'<button class="btn ghost" data-act="logout">تسجيل خروج</button></div>';
+}
+
+/* ---- sync: نسخ عامة آمنة (busy / portal) بيحدّثها المدير تلقائياً ---- */
+function fnv(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(36);}
+function clean(o){const r={};Object.keys(o).forEach(k=>{if(o[k]!==undefined&&o[k]!==null&&o[k]!=='')r[k]=o[k];});return r;}
+const byId=(a,b)=>a.id<b.id?-1:a.id>b.id?1:0;
+function portalPayload(c){
+  const bs=S.bookings.filter(b=>b.customerId===c.id).sort(byId).map(b=>clean({id:b.id,date:b.date,start:+b.start,duration:+b.duration,status:stOf(b),price:+b.price||0,listPrice:+b.listPrice||0,discount:+b.discount||0,note:b.note,charged:!!b.charged,cancelReason:b.cancelReason}));
+  const ps=S.payments.filter(p=>p.customerId===c.id).sort(byId).map(p=>clean({id:p.id,date:p.date,amount:+p.amount||0,note:p.note,createdAt:+p.createdAt||0}));
+  return {code:c.code,name:c.name||'',openingBalance:r2(+c.openingBalance||0),bookings:bs,payments:ps};
+}
+let syncT=null,syncBusy=false,syncAgain=false;
+function scheduleSync(){
+  if(S.mode!=='owner'||!S.canWrite)return;
+  if(syncBusy){syncAgain=true;return;}
+  clearTimeout(syncT);syncT=setTimeout(runSync,1200);
+}
+async function runSync(){
+  if(syncBusy||S.mode!=='owner'||!S.canWrite||S.err)return;
+  const L=S.loaded;if(!(L.customers&&L.bookings&&L.payments&&L.portal&&L.busy))return;
+  syncBusy=true;
+  try{
+    for(const c of S.customers){if(!c.code){const code=genCode();await db.doc('customers/'+c.id).update({code:code});c.code=code;}}
+    const ops=[];
+    S.customers.forEach(c=>{
+      if(!c.code)return;
+      const pl=portalPayload(c),h=fnv(JSON.stringify(pl));
+      if(S.portalH[c.code]!==h)ops.push(b=>b.set(db.doc('portal/'+c.code),Object.assign({h:h,upd:Date.now()},pl)));
+    });
+    const from=addDays(bizToday(),-1),want={};
+    S.bookings.forEach(b=>{if(isActive(b)&&b.date>=from)want[b.id]={date:b.date,start:+b.start,duration:+b.duration};});
+    Object.keys(want).forEach(id=>{const w=want[id],e=S.busyDocs[id];if(!e||e.date!==w.date||e.start!==w.start||e.duration!==w.duration)ops.push(b=>b.set(db.doc('busy/'+id),w));});
+    Object.keys(S.busyDocs).forEach(id=>{if(!want[id])ops.push(b=>b.delete(db.doc('busy/'+id)));});
+    for(let i=0;i<ops.length;i+=400){const b=db.batch();ops.slice(i,i+400).forEach(f=>f(b));await b.commit();}
+  }catch(e){S.syncErr=e&&e.code||'err';}
+  syncBusy=false;
+  if(syncAgain){syncAgain=false;scheduleSync();}
+}
+
+/* ---- import من النسخة القديمة ---- */
+async function doImport(){
+  const f=S.importFile;
+  if(!f){toast('اختار ملف migration.json الأول');return;}
+  let j;try{j=JSON.parse(await f.text());}catch(e){toast('الملف مش سليم');return;}
+  const cols=['customers','bookings','payments','expenses','staff','remittances','requests'],ops=[];
+  cols.forEach(c=>Object.keys(j[c]||{}).forEach(id=>{if(/^[A-Za-z0-9_-]{1,40}$/.test(id))ops.push([db.collection(c).doc(id),j[c][id]]);}));
+  if(j.settings&&j.settings.main)ops.push([db.doc('settings/main'),j.settings.main]);
+  if(!ops.length){toast('مفيش بيانات في الملف');return;}
+  try{
+    for(let i=0;i<ops.length;i+=400){const b=db.batch();ops.slice(i,i+400).forEach(o=>b.set(o[0],o[1]));await b.commit();}
+    S.importFile=null;toast('تم استيراد '+ops.length+' عنصر');
+  }catch(e){toast('تعذر الاستيراد');}
+}
+
+let startRun=0;
+async function start(){
+  const run=++startRun;
+  unsubs.forEach(u=>{try{u();}catch(e){}});unsubs=[];subFor=null;clearTimeout(syncT);
+  S.loaded={};S.customers=[];S.bookings=[];S.payments=[];S.requests=[];S.expenses=[];S.staff=[];S.remits=[];S.cust=null;S.err=null;S.slow=false;S.cid=null;S.portalH={};S.busyDocs={};
+  closeSheet();
+  const m=/^#c-([a-z0-9]+)$/i.exec(location.hash||'');
+  const pb=location.hash==='#book';
+  S.mode='boot';render(true);
+  if(typeof firebase==='undefined'){S.mode='nodb';S.nodbTitle='تعذر تحميل Firebase، اتأكد من النت وحدّث الصفحة';render(true);return;}
+  if(cfgMissing){S.mode='nodb';S.nodbTitle='لسه ما اتحطش إعداد Firebase في الملف (FIREBASE_CONFIG)';render(true);return;}
+  clearTimeout(S.t);S.t=setTimeout(()=>{if(!ready()){S.slow=true;render(true);}},10000);
+  if(pb){
+    S.mode='public';S.pub=S.pub||{date:bizToday(),start:null,dur:60,name:'',phone:''};
+    subCfg();
+    sub(db.collection('busy').where('date','>=',bizToday()),'bookings');
+  }else if(m){
+    S.mode='customer';S.code=m[1].toLowerCase();
+    subCfg();
+    unsubs.push(db.doc('portal/'+S.code).onSnapshot(s=>{
+      S.loaded.cust=true;
+      if(!s.exists){S.cust=null;S.bookings=[];S.payments=[];}
+      else{
+        const d=s.data();
+        S.cust={id:S.code,name:d.name,openingBalance:d.openingBalance||0};
+        S.bookings=(d.bookings||[]).map(b=>Object.assign({},b,{customerId:S.code}));
+        S.payments=(d.payments||[]).map(p=>Object.assign({},p,{customerId:S.code}));
+      }
+      S.loaded.bookings=true;S.loaded.payments=true;
+      render();
+    },onErr));
+  }else{
+    await authReady;if(run!==startRun)return;
+    S.mode='owner';S.authed=!!authUser;S.canWrite=false;S.roleChk=!!authUser;
+    subCfg();
+    if(!authUser){render(true);return;}
+    render(true);
+    try{const t=await db.doc('team/'+String(authUser.email||'').toLowerCase()).get();S.canWrite=!!(t.exists&&t.data().role==='admin');}catch(e){S.canWrite=false;}
+    if(run!==startRun)return;
+    S.roleChk=false;
+    render(true);
+    if(!S.canWrite)return;
+    sub(db.collection('customers'),'customers');
+    sub(db.collection('bookings'),'bookings');
+    sub(db.collection('payments'),'payments');
+    sub(db.collection('requests'),'requests');
+    sub(db.collection('expenses'),'expenses');
+    sub(db.collection('staff'),'staff');
+    sub(db.collection('remittances'),'remits');
+    unsubs.push(db.collection('portal').onSnapshot(snap=>{S.portalH={};snap.docs.forEach(d=>{S.portalH[d.id]=d.data().h;});S.loaded.portal=true;scheduleSync();},onErr));
+    unsubs.push(db.collection('busy').onSnapshot(snap=>{S.busyDocs={};snap.docs.forEach(d=>{const x=d.data();S.busyDocs[d.id]={date:x.date,start:x.start,duration:x.duration};});S.loaded.busy=true;scheduleSync();},onErr));
+  }
+}
+window.addEventListener('hashchange',start);
+render(true);
+start();
+})();
+</script>
+</body>
+</html>
